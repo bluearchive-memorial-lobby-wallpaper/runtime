@@ -18,6 +18,7 @@ import {
 import type { SubtitleAlignment, SubtitlePosition } from "../layout/subtitle.js";
 import type { WallpaperProperties } from "../wallpaper-engine/WallpaperEngineBridge.js";
 import { installWallpaperEngineBridge } from "../wallpaper-engine/WallpaperEngineBridge.js";
+import { isPanelLocale, type PanelLocale } from "../i18n/panel.js";
 import {
   DEBUG_PRESETS,
   DIALOGUE_LANGUAGE_PRESETS,
@@ -40,12 +41,6 @@ import {
   type PositionPreset,
   type PositionPresetSettings,
 } from "./propertyGroupPresets.js";
-
-export type PanelLocale = "zh-cn" | "en";
-
-export function isPanelLocale(value: unknown): value is PanelLocale {
-  return value === "zh-cn" || value === "en";
-}
 
 export interface WallpaperSettings {
   positionPreset: PositionPreset;

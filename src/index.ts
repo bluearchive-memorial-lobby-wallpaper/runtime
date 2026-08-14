@@ -22,3 +22,5 @@ export * from "./debug-ui/DebugPanelPointerController.js";
 export * from "./interaction/interactionSettings.js";
 export * from "./interaction/PointerInteractionController.js";
 export * from "./logging/WallpaperLogger.js";
+export * from "./i18n/panel.js";
+export * from "./app/App.js";
