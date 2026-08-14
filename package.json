@@ -5,6 +5,7 @@
   "type": "module",
   "files": [
     "dist",
+    "styles",
     "README.md"
   ],
   "exports": {
@@ -15,7 +16,8 @@
     "./wallpaper-engine": {
       "types": "./dist/wallpaper-engine/index.d.ts",
       "import": "./dist/wallpaper-engine/index.js"
-    }
+    },
+    "./style.css": "./styles/wallpaper.css"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
