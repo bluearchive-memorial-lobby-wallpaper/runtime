@@ -2,7 +2,7 @@
 
 `ba-memorylobby-wallpaper-runtime` 是面向《蔚蓝档案》纪念大厅风格 Wallpaper Engine Web 壁纸的通用运行时内核。它将壁纸的程序能力与具体角色内容分离，使模型、动画、对话和音频能够以内容包的形式接入，而帧率控制、画面布局、播放状态及 Wallpaper Engine 宿主通信等逻辑由统一的运行时维护。
 
-本仓库不包含具体角色的 Spine 模型、纹理、语音、BGM、字幕、预览图或 Wallpaper Engine 作品元数据，也不生成最终作品的 `project.json`。这些内容应由各壁纸实例项目自行拥有。当前版本提供运行时的基础契约和第一批通用模块；它仍是源码级 TypeScript 包，尚未发布到 npm registry。
+本仓库不包含具体角色的 Spine 模型、纹理、语音、BGM、字幕、预览图或 Wallpaper Engine 作品元数据，也不生成最终作品的 `project.json`。这些内容应由各壁纸实例项目自行拥有。当前版本提供运行时的基础契约和第一批通用模块，并生成可供本地 npm 依赖消费的 JavaScript 与类型声明；它尚未发布到 npm registry。
 
 ## 快速开始
 
@@ -122,7 +122,7 @@ disposeBridge();
 }
 ```
 
-由于当前导出直接指向 TypeScript 源文件，实例项目的构建器必须能够解析 TypeScript。发布为正式软件包前，应增加编译产物与声明文件，并将 `exports` 切换到 `dist`。
+包入口指向 `dist` 中的 ESM JavaScript 和类型声明。本地联合开发前应先运行 `npm run build`；`npm run check`、`npm test` 和 `npm pack` 会自动执行构建。
 
 ## 架构
 
@@ -287,4 +287,4 @@ if (delta !== null) {
 - `calculateViewportLayout()` 不替调用方处理非法缩放值；实例配置和用户属性适配层应先限制数值范围。
 - 安装 Wallpaper Engine 桥接后应保存并调用清理函数，尤其是在热重载或重复初始化场景中，避免残留旧回调。
 - 通用浏览器测试不能替代真实 Wallpaper Engine 验证。任何实例接入或升级本运行时后，在部署到正式作品目录前，都必须分别完成外部 Chrome 行为与控制台检查，以及真实 Wallpaper Engine 窗口中的交互、属性回调、暂停/恢复和日志验证。
-- 当前包仍处于 `0.x` 阶段且标记为 `private`。在接口稳定、生成 JavaScript 和 `.d.ts` 产物、补齐许可证及发布流程之前，不应作为公共 npm 包发布。
+- 当前包仍处于 `0.x` 阶段且标记为 `private`。在接口稳定并补齐许可证与发布流程之前，不应作为公共 npm 包发布。
