@@ -48,7 +48,7 @@ declare global {
       applyUserProperties?: (properties: WallpaperProperties) => void;
       setPaused?: (paused: boolean) => void;
     };
-    __hareWallpaperDebug?: any;
+    __memoryLobbyWallpaperDebug?: any;
   }
 }
 
@@ -831,7 +831,7 @@ export class App {
   }
 
   private installDebugApi() {
-    window.__hareWallpaperDebug = {
+    window.__memoryLobbyWallpaperDebug = {
       getSnapshot: () => ({
         phase: this.phase,
         animation: this.animation,
