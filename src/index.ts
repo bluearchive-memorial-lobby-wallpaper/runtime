@@ -14,6 +14,8 @@ export * from "./lifecycle/initializeStableResourceVariant.js";
 export * from "./spine/resetPlaybackPose.js";
 export * from "./spine/SpineRenderer.js";
 export * from "./debug-ui/visibility.js";
+export * from "./debug-ui/LogViewerController.js";
+export * from "./debug-ui/DebugPanelPointerController.js";
 export * from "./interaction/interactionSettings.js";
 export * from "./interaction/PointerInteractionController.js";
 export * from "./logging/WallpaperLogger.js";
