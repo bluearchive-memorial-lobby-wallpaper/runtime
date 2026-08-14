@@ -24,3 +24,4 @@ export * from "./interaction/PointerInteractionController.js";
 export * from "./logging/WallpaperLogger.js";
 export * from "./i18n/panel.js";
 export * from "./app/App.js";
+export * from "./ui/createWallpaperShell.js";
