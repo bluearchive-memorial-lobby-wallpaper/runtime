@@ -24,8 +24,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
-    "test": "npm run build && node --test --experimental-strip-types test/*.test.ts",
-    "check": "npm run build && npm run typecheck && node --test --experimental-strip-types test/*.test.ts",
+    "test": "npm run build && node --test --experimental-strip-types test/*.test.ts test/*.test.mjs",
+    "check": "npm run build && npm run typecheck && node --test --experimental-strip-types test/*.test.ts test/*.test.mjs",
     "prepack": "npm run check"
   },
   "devDependencies": {
