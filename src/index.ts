@@ -8,3 +8,8 @@ export * from "./render/FrameLimiter.js";
 export * from "./layout/viewport.js";
 export * from "./layout/modelTransform.js";
 export * from "./layout/subtitle.js";
+export * from "./settings/resolution.js";
+export * from "./settings/qualityPreset.js";
+export * from "./lifecycle/initializeStableResourceVariant.js";
+export * from "./spine/resetPlaybackPose.js";
+export * from "./debug-ui/visibility.js";
