@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { defineWallpaper, validateWallpaperDefinition } from "../dist/index.js";
+import {
+  createDialogueLineResolver,
+  defineWallpaper,
+  validateWallpaperDefinition,
+} from "../dist/index.js";
 
 test("accepts a minimal content definition", () => {
   const definition = defineWallpaper({
@@ -37,4 +41,14 @@ test("reports duplicate dialogue identities", () => {
     dialogues: [baseDialogue, baseDialogue],
   });
   assert.equal(validateWallpaperDefinition(definition).length, 2);
+});
+
+test("resolves dialogue lines without case sensitivity", () => {
+  const resolve = createDialogueLineResolver([{
+    index: 1,
+    motionAnimation: "Talk",
+    durationSeconds: 1,
+    lines: [{ id: "Line_One", text: { en: "Hello" } }],
+  }]);
+  assert.equal(resolve("line_one")?.text.en, "Hello");
 });
