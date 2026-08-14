@@ -6,7 +6,7 @@ export interface DefinitionIssue {
 }
 
 export function validateWallpaperDefinition(
-  definition: WallpaperDefinition,
+  definition: WallpaperDefinition<any>,
 ): readonly DefinitionIssue[] {
   const issues: DefinitionIssue[] = [];
   if (!definition.id.trim()) issues.push({ path: "id", message: "must not be empty" });
@@ -42,7 +42,7 @@ export function validateWallpaperDefinition(
   return issues;
 }
 
-export function assertWallpaperDefinition(definition: WallpaperDefinition): void {
+export function assertWallpaperDefinition(definition: WallpaperDefinition<any>): void {
   const issues = validateWallpaperDefinition(definition);
   if (issues.length > 0) {
     throw new Error(issues.map((issue) => `${issue.path}: ${issue.message}`).join("\n"));

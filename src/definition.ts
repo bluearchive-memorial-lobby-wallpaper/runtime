@@ -65,7 +65,7 @@ export interface InteractionDefinition {
   readonly dialogueGraceSeconds?: number;
 }
 
-export interface WallpaperDefinition {
+export interface WallpaperDefinition<VoiceLocale extends string = string> {
   readonly schemaVersion: 1;
   readonly id: string;
   readonly model: SpineModelDefinition;
@@ -74,10 +74,21 @@ export interface WallpaperDefinition {
   readonly dialogues?: readonly DialogueDefinition[];
   readonly audio?: {
     readonly bgm?: { readonly title: string; readonly path: string };
-    readonly voicePath?: (eventId: string, locale: Locale) => string;
+    readonly voicePath?: (eventId: string, locale: VoiceLocale) => string;
   };
 }
 
-export function defineWallpaper<const T extends WallpaperDefinition>(definition: T): T {
+export function defineWallpaper<const T extends WallpaperDefinition<any>>(definition: T): T {
   return definition;
+}
+
+export function createDialogueLineResolver(
+  dialogues: readonly DialogueDefinition[],
+): (eventId: string) => LocalizedDialogueLine | undefined {
+  const lines = new Map(
+    dialogues.flatMap((dialogue) =>
+      dialogue.lines.map((line) => [line.id.toLowerCase(), line] as const),
+    ),
+  );
+  return (eventId: string) => lines.get(eventId.toLowerCase());
 }
