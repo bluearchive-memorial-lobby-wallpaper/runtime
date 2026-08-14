@@ -37,6 +37,31 @@ test("media players resolve instance-owned asset paths", async () => {
   }
 });
 
+test("BGM defers source loading until playback is enabled", async () => {
+  const originalAudio = globalThis.Audio;
+  globalThis.Audio = FakeAudio as unknown as typeof Audio;
+  FakeAudio.instances = [];
+  try {
+    const bgm = new BgmPlayer({ title: "Theme", path: "./theme.flac" }, {
+      onStatusChange() {}, onError: assert.fail,
+    });
+    const audio = FakeAudio.instances[0];
+    assert(audio);
+    assert.equal(audio.src, "");
+    bgm.configure(false, 0.5);
+    assert.equal(audio.src, "");
+    bgm.configure(true, 0.5);
+    await Promise.resolve();
+    assert.equal(audio.src, "./theme.flac");
+    assert.equal(audio.playCalls, 1);
+    assert.equal(audio.volume, 0.5);
+    bgm.dispose();
+    assert.equal(audio.src, "");
+  } finally {
+    globalThis.Audio = originalAudio;
+  }
+});
+
 test("subtitle presentation uses the injected content resolver", () => {
   const resolveLine = (eventId: string) => eventId === "line-1"
     ? { text: { en: "Hello", ja: "こんにちは" } } : undefined;
