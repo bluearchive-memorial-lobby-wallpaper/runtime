@@ -3,14 +3,26 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "exports": {
-    ".": "./src/index.ts",
-    "./wallpaper-engine": "./src/wallpaper-engine/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./wallpaper-engine": {
+      "types": "./dist/wallpaper-engine/index.d.ts",
+      "import": "./dist/wallpaper-engine/index.js"
+    }
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
-    "test": "node --test --experimental-strip-types test/*.test.ts",
-    "check": "npm run typecheck && npm test"
+    "test": "npm run build && node --test --experimental-strip-types test/*.test.ts",
+    "check": "npm run build && npm run typecheck && node --test --experimental-strip-types test/*.test.ts",
+    "prepack": "npm run check"
   },
   "devDependencies": {
     "@types/node": "24.10.1",

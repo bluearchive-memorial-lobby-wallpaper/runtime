@@ -1,1 +1,1 @@
-export * from "./WallpaperEngineBridge.ts";
+export * from "./WallpaperEngineBridge.js";

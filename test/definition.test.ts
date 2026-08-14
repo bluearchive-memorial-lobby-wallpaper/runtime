@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { defineWallpaper, validateWallpaperDefinition } from "../src/index.ts";
+import { defineWallpaper, validateWallpaperDefinition } from "../dist/index.js";
 
 test("accepts a minimal content definition", () => {
   const definition = defineWallpaper({

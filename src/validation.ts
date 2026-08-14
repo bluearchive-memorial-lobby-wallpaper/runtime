@@ -1,4 +1,4 @@
-import type { WallpaperDefinition } from "./definition.ts";
+import type { WallpaperDefinition } from "./definition.js";
 
 export interface DefinitionIssue {
   readonly path: string;
