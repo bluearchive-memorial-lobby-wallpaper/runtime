@@ -1,28 +1,30 @@
+import { BgmPlayer, type BgmStatus } from "../audio/BgmPlayer.js";
+import { VoicePlayer } from "../audio/VoicePlayer.js";
+import { DialoguePlaybackSequence } from "../dialogue/DialoguePlaybackSequence.js";
+import { SubtitlePresenter } from "../dialogue/SubtitlePresenter.js";
+import { FrameLimiter } from "../render/FrameLimiter.js";
+import { initializeStableResourceVariant } from "../lifecycle/initializeStableResourceVariant.js";
+import { isQualityPreset } from "../settings/qualityPreset.js";
+import { MODEL_RESOLUTIONS, RENDER_RESOLUTIONS } from "../settings/resolution.js";
+import { PointerInteractionController } from "../interaction/PointerInteractionController.js";
 import {
-  BgmPlayer,
-  type BgmStatus,
-  DialoguePlaybackSequence,
-  FrameLimiter,
-  initializeStableResourceVariant,
-  isQualityPreset,
-  MODEL_RESOLUTIONS,
-  PointerInteractionController,
-  RENDER_RESOLUTIONS,
-  resolveDebugPanelExpanded,
   canTriggerDialogue,
   didDialogueSettingChange,
   didInteractionSettingsChange,
-  DebugPanelPointerController,
-  LogViewerController,
+} from "../interaction/interactionSettings.js";
+import { resolveDebugPanelExpanded } from "../debug-ui/visibility.js";
+import { DebugPanelPointerController } from "../debug-ui/DebugPanelPointerController.js";
+import { LogViewerController } from "../debug-ui/LogViewerController.js";
+import {
   WallpaperEngineAdapter,
-  resolvePropertyGroupVisibility,
   type WallpaperSettings,
+} from "../settings/WallpaperEngineAdapter.js";
+import { resolvePropertyGroupVisibility } from "../settings/propertyGroupVisibility.js";
+import {
   SpineRenderer,
   type InteractionMode,
   type SpineEventDetail,
-  SubtitlePresenter,
-  VoicePlayer,
-} from "ba-memorylobby-wallpaper-runtime";
+} from "../spine/SpineRenderer.js";
 import type { InteractiveWallpaperDefinition } from "../definition.js";
 import type { VoiceLocale } from "../settings/propertyGroupPresets.js";
 import type { WallpaperLogger } from "../logging/WallpaperLogger.js";
