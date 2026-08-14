@@ -1,7 +1,6 @@
 {
   "name": "ba-memorylobby-wallpaper-runtime",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
   "files": [
     "assets",
