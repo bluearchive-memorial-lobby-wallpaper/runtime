@@ -13,3 +13,5 @@ export * from "./settings/qualityPreset.js";
 export * from "./lifecycle/initializeStableResourceVariant.js";
 export * from "./spine/resetPlaybackPose.js";
 export * from "./debug-ui/visibility.js";
+export * from "./interaction/interactionSettings.js";
+export * from "./interaction/PointerInteractionController.js";
