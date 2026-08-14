@@ -858,13 +858,13 @@ export class SpineRenderer {
 
   private installSpine38ScreenBlendFix() {
     const converter = this.spine.webgl.WebGLBlendModeConverter;
-    if (converter.__hareScreenBlendFixed) return;
+    if (converter.__spine38ScreenBlendFixed) return;
     const originalGetDestination = converter.getDestGLBlendMode.bind(converter);
     converter.getDestGLBlendMode = (blendMode: number) =>
       blendMode === this.spine.BlendMode.Screen
         ? this.gl.ONE_MINUS_SRC_COLOR
         : originalGetDestination(blendMode);
-    converter.__hareScreenBlendFixed = true;
+    converter.__spine38ScreenBlendFixed = true;
   }
 
   private createGraphicsResources() {
