@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "files": [
+    "assets",
     "dist",
     "styles",
     "README.md"
@@ -17,6 +18,7 @@
       "types": "./dist/wallpaper-engine/index.d.ts",
       "import": "./dist/wallpaper-engine/index.js"
     },
+    "./logging-bootstrap.js": "./assets/logging-bootstrap.js",
     "./style.css": "./styles/wallpaper.css"
   },
   "scripts": {
