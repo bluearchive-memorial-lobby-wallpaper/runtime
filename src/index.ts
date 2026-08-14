@@ -16,3 +16,4 @@ export * from "./spine/SpineRenderer.js";
 export * from "./debug-ui/visibility.js";
 export * from "./interaction/interactionSettings.js";
 export * from "./interaction/PointerInteractionController.js";
+export * from "./logging/WallpaperLogger.js";
