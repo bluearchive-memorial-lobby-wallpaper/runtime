@@ -78,6 +78,28 @@ export interface WallpaperDefinition<VoiceLocale extends string = string> {
   };
 }
 
+export type InteractiveWallpaperDefinition<VoiceLocale extends string = string> =
+  Omit<WallpaperDefinition<VoiceLocale>, "animations" | "interactions" | "dialogues"> & {
+    readonly animations: AnimationDefinition & { readonly intro: string };
+    readonly interactions: InteractionDefinition & {
+      readonly eyeBone: string;
+      readonly headControlBone: string;
+      readonly headAnchorBone: string;
+      readonly look: Required<NonNullable<InteractionDefinition["look"]>>;
+      readonly pat: Required<NonNullable<InteractionDefinition["pat"]>>;
+      readonly headRadius: NonNullable<InteractionDefinition["headRadius"]>;
+      readonly bodyFromHead: NonNullable<InteractionDefinition["bodyFromHead"]>;
+      readonly eyeClamp: NonNullable<InteractionDefinition["eyeClamp"]>;
+      readonly patClamp: number;
+      readonly dragThresholdPixels: number;
+      readonly cooldownSeconds: number;
+      readonly dialogueGraceSeconds: number;
+    };
+    readonly dialogues: readonly (DialogueDefinition & {
+      readonly attachmentAnimation: string;
+    })[];
+  };
+
 export function defineWallpaper<const T extends WallpaperDefinition<any>>(definition: T): T {
   return definition;
 }
