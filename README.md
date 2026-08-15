@@ -1,6 +1,6 @@
-# ba-memorylobby-wallpaper-runtime
+# ba-memorial-lobby-wallpaper-runtime
 
-`ba-memorylobby-wallpaper-runtime` 是面向《蔚蓝档案》纪念大厅风格 Wallpaper Engine Web 壁纸的通用运行时内核。它将壁纸的程序能力与具体角色内容分离，使模型、动画、对话和音频能够以内容包的形式接入，而帧率控制、画面布局、播放状态及 Wallpaper Engine 宿主通信等逻辑由统一的运行时维护。
+`ba-memorial-lobby-wallpaper-runtime` 是面向《蔚蓝档案》纪念大厅风格 Wallpaper Engine Web 壁纸的通用运行时内核。它将壁纸的程序能力与具体角色内容分离，使模型、动画、对话和音频能够以内容包的形式接入，而帧率控制、画面布局、播放状态及 Wallpaper Engine 宿主通信等逻辑由统一的运行时维护。
 
 本包不包含具体角色的 Spine 模型、纹理、语音、BGM、字幕、预览图或 Wallpaper Engine 作品元数据，也不生成最终作品的 `project.json`。这些内容应由各壁纸实例项目自行拥有。当前版本 `0.1.0` 已发布到 npm registry，提供内容契约与校验、Spine 渲染与指针交互、音频与对话生命周期、设置内核、日志与调试界面、壁纸外壳，以及 Wallpaper Engine 宿主桥接。
 
@@ -15,7 +15,7 @@
 ### 在壁纸实例中安装
 
 ```powershell
-npm install ba-memorylobby-wallpaper-runtime
+npm install ba-memorial-lobby-wallpaper-runtime
 ```
 
 实例项目应在 `dependencies` 中声明受限的版本范围（例如 `^0.1.0`），通过 npm 版本更新接收运行时修复与功能演进。
@@ -25,11 +25,11 @@ npm install ba-memorylobby-wallpaper-runtime
 运行时通过 `defineWallpaper()` 接收实例配置。下面是最小内容包示例：
 
 ```ts
-import { defineWallpaper } from "ba-memorylobby-wallpaper-runtime";
+import { defineWallpaper } from "ba-memorial-lobby-wallpaper-runtime";
 
 export const wallpaper = defineWallpaper({
   schemaVersion: 1,
-  id: "example-memory-lobby",
+  id: "example-memorial-lobby",
   model: {
     binary: "./assets/model/example.skel",
     atlases: {
@@ -62,7 +62,7 @@ export const wallpaper = defineWallpaper({
 import {
   assertWallpaperDefinition,
   validateWallpaperDefinition,
-} from "ba-memorylobby-wallpaper-runtime";
+} from "ba-memorial-lobby-wallpaper-runtime";
 
 const issues = validateWallpaperDefinition(wallpaper);
 
@@ -83,7 +83,7 @@ Wallpaper Engine 专用入口与通用入口分开导出：
 import {
   installWallpaperEngineBridge,
   type WallpaperProperties,
-} from "ba-memorylobby-wallpaper-runtime/wallpaper-engine";
+} from "ba-memorial-lobby-wallpaper-runtime/wallpaper-engine";
 
 const disposeBridge = installWallpaperEngineBridge(window, {
   applyUserProperties(properties: WallpaperProperties) {
@@ -115,7 +115,7 @@ disposeBridge();
 └─ 实例默认设置
           │
           ▼
-ba-memorylobby-wallpaper-runtime
+ba-memorial-lobby-wallpaper-runtime
 ├─ 内容契约与校验
 ├─ Spine 渲染与指针交互
 ├─ 对话、字幕与音频生命周期

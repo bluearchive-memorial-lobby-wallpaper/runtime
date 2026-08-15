@@ -3,7 +3,7 @@
 
   if (window.__wallpaperLogBootstrap) return;
 
-  var STORAGE_PREFIX = "memory-lobby-wallpaper-log:v1:";
+  var STORAGE_PREFIX = "memorial-lobby-wallpaper-log:v1:";
   var INDEX_KEY = STORAGE_PREFIX + "index";
   var SESSION_KEY_PREFIX = STORAGE_PREFIX + "session:";
   var ACTIVE_SESSION_KEY = STORAGE_PREFIX + "active-session";
