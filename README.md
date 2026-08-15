@@ -2,7 +2,7 @@
 
 `ba-memorylobby-wallpaper-runtime` 是面向《蔚蓝档案》纪念大厅风格 Wallpaper Engine Web 壁纸的通用运行时内核。它将壁纸的程序能力与具体角色内容分离，使模型、动画、对话和音频能够以内容包的形式接入，而帧率控制、画面布局、播放状态及 Wallpaper Engine 宿主通信等逻辑由统一的运行时维护。
 
-本仓库不包含具体角色的 Spine 模型、纹理、语音、BGM、字幕、预览图或 Wallpaper Engine 作品元数据，也不生成最终作品的 `project.json`。这些内容应由各壁纸实例项目自行拥有。当前版本提供运行时的基础契约和第一批通用模块，并生成可供本地 npm 依赖消费的 JavaScript 与类型声明；它尚未发布到 npm registry。
+本包不包含具体角色的 Spine 模型、纹理、语音、BGM、字幕、预览图或 Wallpaper Engine 作品元数据，也不生成最终作品的 `project.json`。这些内容应由各壁纸实例项目自行拥有。当前版本 `0.1.0` 已发布到 npm registry，提供内容契约与校验、Spine 渲染与指针交互、音频与对话生命周期、设置内核、日志与调试界面、壁纸外壳，以及 Wallpaper Engine 宿主桥接。
 
 ## 快速开始
 
@@ -12,24 +12,13 @@
 - npm 10 或更高版本
 - TypeScript 由项目开发依赖提供，无需全局安装
 
-克隆或进入仓库后安装依赖：
+### 在壁纸实例中安装
 
 ```powershell
-npm install
+npm install ba-memorylobby-wallpaper-runtime
 ```
 
-运行全部静态检查和测试：
-
-```powershell
-npm run check
-```
-
-也可以分别执行：
-
-```powershell
-npm run typecheck
-npm test
-```
+实例项目应在 `dependencies` 中声明受限的版本范围（例如 `^0.1.0`），通过 npm 版本更新接收运行时修复与功能演进。
 
 ### 在壁纸实例中定义内容
 
@@ -112,17 +101,7 @@ const disposeBridge = installWallpaperEngineBridge(window, {
 disposeBridge();
 ```
 
-本地开发可暂时使用 workspace 或本地路径依赖。例如在实例项目的 `package.json` 中使用：
-
-```json
-{
-  "dependencies": {
-    "ba-memorylobby-wallpaper-runtime": "file:../ba-memorylobby-wallpaper-runtime"
-  }
-}
-```
-
-包入口指向 `dist` 中的 ESM JavaScript 和类型声明。本地联合开发前应先运行 `npm run build`；`npm run check`、`npm test` 和 `npm pack` 会自动执行构建。
+包入口指向 `dist` 中的 ESM JavaScript 和类型声明。仓库内开发时先运行 `npm run build`；`npm run check`、`npm test` 和 `npm pack` 会自动执行构建。
 
 ## 架构
 
@@ -138,8 +117,11 @@ disposeBridge();
           ▼
 ba-memorylobby-wallpaper-runtime
 ├─ 内容契约与校验
-├─ 对话播放状态
+├─ Spine 渲染与指针交互
+├─ 对话、字幕与音频生命周期
+├─ 设置内核与 Wallpaper Engine 适配
 ├─ 帧率与时间步进
+├─ 日志与调试界面
 ├─ 视口、模型和字幕布局
 └─ Wallpaper Engine 宿主桥接
 ```
@@ -150,14 +132,44 @@ ba-memorylobby-wallpaper-runtime
 src/
 ├─ definition.ts                  # 内容包公共类型与 defineWallpaper
 ├─ validation.ts                  # 内容定义的运行时校验
+├─ app/
+│  └─ App.ts                      # 应用协调器：启动、渲染循环与暂停协调
+├─ audio/
+│  ├─ BgmPlayer.ts                # BGM 加载与播放状态
+│  └─ VoicePlayer.ts              # 对话语音播放
+├─ debug-ui/
+│  ├─ LogViewerController.ts      # 日志查看器
+│  ├─ DebugPanelPointerController.ts # 调试面板拖拽
+│  └─ visibility.ts               # 调试面板可见性解析
 ├─ dialogue/
-│  └─ DialoguePlaybackSequence.ts # 对话序列及自动续播状态
-├─ render/
-│  └─ FrameLimiter.ts             # 固定帧率时间步进
+│  ├─ DialoguePlaybackSequence.ts # 对话序列及自动续播状态
+│  └─ SubtitlePresenter.ts        # 字幕行解析与呈现
+├─ i18n/
+│  └─ panel.ts                    # 调试面板中英双语文案
+├─ interaction/
+│  ├─ PointerInteractionController.ts # 命中区到视线/摸头/对话意图
+│  └─ interactionSettings.ts      # 交互设置变更判定
 ├─ layout/
 │  ├─ viewport.ts                 # CSS、渲染分辨率和世界视口换算
 │  ├─ modelTransform.ts           # 模型旋转矩阵与点坐标变换
 │  └─ subtitle.ts                 # 字幕位置和对齐方式
+├─ lifecycle/
+│  └─ initializeStableResourceVariant.ts # 资源档位稳定初始化
+├─ logging/
+│  └─ WallpaperLogger.ts          # 分类日志与会话持久化
+├─ render/
+│  └─ FrameLimiter.ts             # 固定帧率时间步进
+├─ settings/
+│  ├─ WallpaperEngineAdapter.ts   # WE 用户属性到应用设置的适配
+│  ├─ qualityPreset.ts            # 画质预设
+│  ├─ resolution.ts               # 模型与渲染分辨率
+│  ├─ propertyGroupPresets.ts     # 属性分组预设
+│  └─ propertyGroupVisibility.ts  # 属性分组可见性
+├─ spine/
+│  ├─ SpineRenderer.ts            # WebGL 渲染、轨道切换与上下文恢复
+│  └─ resetPlaybackPose.ts        # 播放姿态复位
+├─ ui/
+│  └─ createWallpaperShell.ts     # 壁纸 DOM 外壳
 └─ wallpaper-engine/
    └─ WallpaperEngineBridge.ts    # Wallpaper Engine 全局监听器适配
 ```
@@ -186,6 +198,8 @@ src/
 | `dialogues` | 对话编号、动作动画、持续时间和多语言字幕 |
 | `audio` | 可选 BGM 信息和语音路径解析函数 |
 
+完整交互壁纸还需要提供 `InteractiveWallpaperDefinition` 要求的全部必填交互字段（视线与摸头骨骼、命中区域、夹紧范围、冷却与拖拽阈值等），`App` 与 `SpineRenderer` 依赖这些字段运行。
+
 语言与纹理档位使用字符串类型，实例可以声明自身实际支持的集合，不要求所有壁纸具有相同语言或相同分辨率档位。
 
 ### 定义校验
@@ -197,7 +211,21 @@ src/
 
 当前校验覆盖内容 ID、模型路径、atlas 档位、设计视口尺寸、对话编号、对话时长以及不区分大小写的字幕行 ID 唯一性。文件是否存在、动画和骨骼是否真实存在于 Spine 数据中，仍应由实例构建工具完成。
 
-### 对话播放序列
+### 壁纸外壳
+
+`createWallpaperShell(root, options)` 创建画布、字幕、状态面板、日志查看器和自定义滚动条等完整 DOM 外壳。`options` 提供 `title`、`canvasLabel` 和 `editionLabel`。外壳标记由运行时生成，实例的 `index.html` 只需保留一个空的挂载根节点。
+
+### 应用协调器
+
+`App` 组装外壳、Spine 渲染器、指针交互、音频与对话生命周期、设置内核与日志，并负责启动协调、渲染循环调度与暂停协调。`WallpaperAppOptions` 接收内容定义、字幕行解析函数、日志实例与可选的调试面板文案。
+
+### Spine 渲染与指针交互
+
+`SpineRenderer` 负责 WebGL 渲染、动画轨道切换、播放姿态复位、模型旋转与缩放、资源档位切换，以及 WebGL 上下文丢失与恢复。它不包含 Spine 数据加载器；skeleton 与 animation state 由实例加载后注入，`spineVersion` 声明由内容包保证与注入数据兼容。
+
+`PointerInteractionController` 将指针命中区域（`head` / `body` / `background`）解析为对话、视线跟随或摸头意图，并处理拖拽阈值、冷却与对话宽限期。
+
+### 对话与字幕
 
 `DialoguePlaybackSequence` 管理对话顺序，不负责动画、音频或字幕本身：
 
@@ -224,6 +252,23 @@ const continuation = sequence.takeAutomaticContinuation();
 | `reset()` | 清空状态并将手动编号恢复为 `1` |
 
 构造参数必须是正整数；播放编号必须位于 `1` 到对话总数之间。
+
+`SubtitlePresenter` 按事件 ID 解析多语言字幕行（`resolveSubtitlePresentation()`），并呈现主/次文本。
+
+### 音频
+
+`BgmPlayer` 管理 BGM 的加载、播放、暂停与错误状态（`disabled` / `loading` / `playing` / `paused` / `blocked` / `error`），支持懒加载。`VoicePlayer` 通过语音路径解析函数播放指定对话的语音，不持有具体路径。
+
+### 设置内核
+
+`WallpaperEngineAdapter` 将 Wallpaper Engine 用户属性适配为应用设置，并提供冻结的 `DEFAULT_SETTINGS`（版本 `7`）。配套模块提供：
+
+- `QUALITY_PRESETS` 与 `isQualityPreset()`：画质预设
+- `MODEL_RESOLUTIONS` / `RENDER_RESOLUTIONS` 与类型守卫：模型与渲染分辨率
+- 属性分组预设与 `resolvePropertyGroupVisibility()`：面板可见性与分组
+- `didInteractionSettingsChange()` 等判定函数：设置变更检测
+
+实例通过预设键组合获得一致的默认行为，无需复制设置逻辑。
 
 ### 帧率限制
 
@@ -265,6 +310,14 @@ if (delta !== null) {
 
 `isSubtitleAlignment()` 与 `isSubtitlePosition()` 可用于验证来自 Wallpaper Engine 或本地调试界面的未知值。
 
+### 日志与调试界面
+
+`WallpaperLogger` 按分类记录日志，并将会话持久化供回看；`LogViewerController` 驱动日志查看器，`DebugPanelPointerController` 支持调试面板拖拽。面板文案由 `PANEL_TEXT` 提供中英双语（`PanelLocale`）。
+
+### 资源稳定初始化
+
+`initializeStableResourceVariant()` 在资源档位（例如纹理档位）切换时，若新档位加载失败则保持上一次成功状态，避免画面空白或闪烁。
+
 ### Wallpaper Engine 桥接
 
 `installWallpaperEngineBridge(host, callbacks)` 安装 Wallpaper Engine 识别的 `wallpaperPropertyListener`，支持：
@@ -280,11 +333,11 @@ if (delta !== null) {
 - 本仓库是运行时库，不应提交具体角色资产、作品预览图、作品描述、来源研究材料或由 Wallpaper Engine 生成的作品文件。
 - `WallpaperDefinition.id`、对话 ID 和 Wallpaper Engine 用户属性键都应视为持久接口。作品发布后随意改名可能破坏用户已保存的设置或音频事件关联。
 - `schemaVersion` 用于内容契约演进。出现不兼容变更时应提升 Schema 版本并提供明确迁移方式，不能静默改变旧字段含义。
-- `spineVersion` 只是内容声明。当前基础包尚未包含 Spine WebGL 加载器，也不会自动选择或校验 Spine runtime；实例必须加载与模型兼容且许可允许分发的运行时。
+- `spineVersion` 只是内容声明。`SpineRenderer` 不加载 Spine 数据；实例必须注入与模型兼容且许可允许分发的 Spine skeleton 与 animation state。
 - 内容定义中的资源路径应使用适合离线构建的相对路径。不要依赖开发服务器地址、用户机器绝对路径或运行时网络下载。
 - `audio.voicePath` 是函数，因此内容定义不是纯 JSON。需要生成清单、缓存键或校验报告时，应由工具层将它解析成确定的文件列表。
 - `FrameLimiter` 的参数单位都是秒。传入毫秒会导致动画和帧率行为错误。
 - `calculateViewportLayout()` 不替调用方处理非法缩放值；实例配置和用户属性适配层应先限制数值范围。
 - 安装 Wallpaper Engine 桥接后应保存并调用清理函数，尤其是在热重载或重复初始化场景中，避免残留旧回调。
 - 通用浏览器测试不能替代真实 Wallpaper Engine 验证。任何实例接入或升级本运行时后，在部署到正式作品目录前，都必须分别完成外部 Chrome 行为与控制台检查，以及真实 Wallpaper Engine 窗口中的交互、属性回调、暂停/恢复和日志验证。
-- 当前包仍处于 `0.x` 阶段且标记为 `private`。在接口稳定并补齐许可证与发布流程之前，不应作为公共 npm 包发布。
+- 当前包为 `0.x` 阶段。`0.x` 期间语义化版本只保证补丁级兼容；升级运行时后应重新完成上述验证门禁，并在接口稳定后另行评估 `1.0` 发布。
