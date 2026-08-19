@@ -188,7 +188,7 @@ test("settings defaults, presets, host callbacks, and session overrides", async 
       panelX: 0,
       panelY: 0,
       interactionPreset: "default",
-      dialogueLanguagePreset: "zh-cn",
+      dialogueLanguagePreset: "ja",
       debugPreset: "off",
       bgmVolume: 0.5,
       voiceVolume: 0.7,
