@@ -9,7 +9,7 @@ import {
   type ModelResolution,
   type RenderResolution,
 } from "../settings/resolution.js";
-import { resetAndApplyPlaybackPose } from "./resetPlaybackPose.js";
+import { resetAndApplyPlaybackPose, updateSkeletonWorldTransform } from "./resetPlaybackPose.js";
 import type { InteractiveWallpaperDefinition } from "../definition.js";
 import type { HitRegion } from "../interaction/PointerInteractionController.js";
 
@@ -236,7 +236,7 @@ export class SpineRenderer {
 
     const skeleton = new this.spine.Skeleton(skeletonData);
     skeleton.setToSetupPose();
-    skeleton.updateWorldTransform();
+    updateSkeletonWorldTransform(skeleton);
 
     const animationStateData = new this.spine.AnimationStateData(skeletonData);
     animationStateData.defaultMix = 0.35;
@@ -586,7 +586,7 @@ export class SpineRenderer {
     eyeBone.y = this.eyeBase.y + this.eyeOffset.y;
     headControlBone.x = this.headControlBase.x;
     headControlBone.y = this.headControlBase.y + this.patOffset;
-    skeleton.updateWorldTransform();
+    updateSkeletonWorldTransform(skeleton);
 
     this.shader.bind();
     this.shader.setUniformi(this.spine.webgl.Shader.SAMPLER, 0);
@@ -858,6 +858,7 @@ export class SpineRenderer {
 
   private installSpine38ScreenBlendFix() {
     const converter = this.spine.webgl.WebGLBlendModeConverter;
+    if (!converter) return;
     if (converter.__spine38ScreenBlendFixed) return;
     const originalGetDestination = converter.getDestGLBlendMode.bind(converter);
     converter.getDestGLBlendMode = (blendMode: number) =>

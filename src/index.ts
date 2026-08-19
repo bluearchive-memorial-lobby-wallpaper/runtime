@@ -16,6 +16,7 @@ export * from "./settings/WallpaperEngineAdapter.js";
 export * from "./lifecycle/initializeStableResourceVariant.js";
 export * from "./spine/resetPlaybackPose.js";
 export * from "./spine/SpineRenderer.js";
+export * from "./spine/loadSpineRuntime.js";
 export * from "./debug-ui/visibility.js";
 export * from "./debug-ui/LogViewerController.js";
 export * from "./debug-ui/DebugPanelPointerController.js";
