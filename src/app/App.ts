@@ -175,6 +175,7 @@ export class App {
   private readonly frameLimiter = new FrameLimiter();
   private startupComplete = false;
   private hostPaused = false;
+  private dialogueContinuationPending = false;
   private rendererUnavailable = false;
   private performanceWindowStartedAt = performance.now();
   private performanceFrameCount = 0;
@@ -430,7 +431,13 @@ export class App {
       { primaryLocale: "zh-cn", secondaryLocale: "ja" },
     );
     this.voice = new VoicePlayer(this.options.definition.audio.voicePath, {
-      onEnded: (eventId) => this.subtitle.hide(eventId),
+      onEnded: (eventId) => {
+        this.subtitle.hide(eventId);
+        if (this.dialogueContinuationPending) {
+          this.dialogueContinuationPending = false;
+          this.finishDialogueAndContinueAutomaticPlayback();
+        }
+      },
       onError: (message) => {
         console.warn(message);
         this.options.logger.warn("error", "voice playback error", { message });
@@ -1083,6 +1090,15 @@ export class App {
     this.syncPausedState();
     this.syncDebugControls(this.settings);
   }
+
+  private readonly primeVoiceFromGesture = () => {
+    if (!this.settings.voiceEnabled || this.settings.muted || this.isPaused()) return;
+    const dialogue = this.options.definition.dialogues.find(
+      (candidate) => candidate.index === this.dialoguePlayback.nextIndex,
+    );
+    const eventId = dialogue?.lines[0]?.id;
+    if (eventId) this.voice.prime(eventId, this.settings.voiceLocale);
+  };
 
   private readonly unlockBgmFromGesture = (event: Event) => {
     const target = event.target;
