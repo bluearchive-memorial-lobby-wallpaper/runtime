@@ -13,7 +13,7 @@ const WALLPAPER_SHELL_TEMPLATE = `<canvas id="wallpaper" aria-label="Memory Lobb
       </div>
 
       <section id="status-panel" class="status-panel" aria-live="polite" aria-label="Wallpaper status and controls" data-panel-aria="panelAria">
-        <p class="status-panel__eyebrow">OFFLINE EDITION · 1.0</p>
+        <p class="status-panel__eyebrow" hidden></p>
         <h1 id="status-title" data-wallpaper-title>Memory Lobby Wallpaper</h1>
         <dl>
           <div><dt data-panel-text="status">状态</dt><dd id="status-phase">启动中</dd></div>
@@ -411,6 +411,13 @@ export function createWallpaperShell(
     "aria-label",
     options.canvasLabel ?? `${options.title ?? "Memory Lobby"} animated wallpaper`,
   );
-  if (options.editionLabel) edition.textContent = options.editionLabel;
+  // The eyebrow shows the wallpaper's own edition label (injected at build time
+  // via __WALLPAPER_VERSION__). The runtime never invents a version: when no
+  // label is provided the eyebrow stays hidden instead of showing a stale
+  // placeholder.
+  if (options.editionLabel) {
+    edition.textContent = options.editionLabel;
+    edition.hidden = false;
+  }
   return root;
 }
