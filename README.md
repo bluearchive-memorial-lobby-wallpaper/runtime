@@ -2,7 +2,7 @@
 
 `ba-memorial-lobby-wallpaper-runtime` 是面向《蔚蓝档案》纪念大厅风格 Wallpaper Engine Web 壁纸的通用运行时内核。它将壁纸的程序能力与具体角色内容分离，使模型、动画、对话和音频能够以内容包的形式接入，而帧率控制、画面布局、播放状态及 Wallpaper Engine 宿主通信等逻辑由统一的运行时维护。
 
-本包不包含具体角色的 Spine 模型、纹理、语音、BGM、字幕、预览图或 Wallpaper Engine 作品元数据，也不生成最终作品的 `project.json`。这些内容应由各壁纸实例项目自行拥有。当前版本 `0.1.0` 已发布到 npm registry，提供内容契约与校验、Spine 渲染与指针交互、音频与对话生命周期、设置内核、日志与调试界面、壁纸外壳，以及 Wallpaper Engine 宿主桥接。
+本包不包含具体角色的 Spine 模型、纹理、语音、BGM、字幕、预览图或 Wallpaper Engine 作品元数据，也不生成最终作品的 `project.json`。这些内容应由各壁纸实例项目自行拥有。
 
 ## 快速开始
 
