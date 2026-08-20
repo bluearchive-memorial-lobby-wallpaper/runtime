@@ -6,7 +6,8 @@
     "assets",
     "dist",
     "styles",
-    "README.md"
+    "README.md",
+    "RELEASE-NOTES.md"
   ],
   "exports": {
     ".": {
