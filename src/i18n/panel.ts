@@ -24,6 +24,7 @@ export interface PanelText {
   visualQuality: string;
   preset: string;
   defaultPreset: string;
+  ecoPreset: string;
   maximumPreset: string;
   customPreset: string;
   renderResolution: string;
@@ -120,6 +121,7 @@ export const PANEL_TEXT: Record<PanelLocale, PanelText> = {
     visualQuality: "画面质量",
     preset: "预设",
     defaultPreset: "默认",
+    ecoPreset: "节能",
     maximumPreset: "最高",
     customPreset: "自定义",
     renderResolution: "渲染分辨率",
@@ -214,6 +216,7 @@ export const PANEL_TEXT: Record<PanelLocale, PanelText> = {
     visualQuality: "Visual Quality",
     preset: "Preset",
     defaultPreset: "Default",
+    ecoPreset: "Eco",
     maximumPreset: "Maximum",
     customPreset: "Custom",
     renderResolution: "Render resolution",

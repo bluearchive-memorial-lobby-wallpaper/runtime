@@ -93,6 +93,7 @@ const WALLPAPER_SHELL_TEMPLATE = `<canvas id="wallpaper" aria-label="Memory Lobb
                 </label>
                 <select id="debug-quality-preset">
                   <option value="default" data-panel-text="defaultPreset" selected>默认</option>
+                  <option value="eco" data-panel-text="ecoPreset">节能</option>
                   <option value="2k">2K</option>
                   <option value="4k">4K</option>
                   <option value="maximum" data-panel-text="maximumPreset">最高</option>

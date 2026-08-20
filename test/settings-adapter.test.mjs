@@ -367,6 +367,11 @@ test("settings defaults, presets, host callbacks, and session overrides", async 
 
   listener.applyGeneralProperties({ fps: 160 });
   assert.equal(adapter.current.fpsLimit, 60);
+  listener.applyUserProperties({ qualitypreset: { value: "eco" } });
+  assert.equal(adapter.current.qualityPreset, "eco");
+  assert.equal(adapter.current.renderResolution, "720p");
+  assert.equal(adapter.current.modelResolution, "2k");
+  assert.equal(adapter.current.fpsLimit, 30);
   listener.applyUserProperties({ qualitypreset: { value: "2k" } });
   assert.equal(adapter.current.qualityPreset, "2k");
   assert.equal(adapter.current.renderResolution, "1440p");
