@@ -179,7 +179,12 @@ export class App {
   private hostPaused = false;
   private dialogueContinuationPending = false;
   private rendererUnavailable = false;
-  private performanceWindowStartedAt = performance.now();
+  // 0 means "no window in progress": the window starts lazily on the first
+  // rendered frame's requestAnimationFrame timestamp, so the measurement
+  // clock and the settlement clock are the same source of truth (see
+  // recordRenderPerformance). Never seed it with performance.now() — the two
+  // time bases diverge across a host pause, which pinned the FPS readout at 0.
+  private performanceWindowStartedAt = 0;
   private performanceFrameCount = 0;
   private performanceRenderTotal = 0;
   private performanceRenderMaximum = 0;
@@ -1229,7 +1234,10 @@ export class App {
     this.frameLimiter.reset();
     this.resetPerformanceWindow();
     const paused = this.isPaused();
-    if (paused) this.measuredFps = 0;
+    // Keep the last measured FPS across a pause instead of pinning it to 0:
+    // the window has been reset and will re-open on the first rendered frame
+    // after resume, so the readout shows the previous value until then rather
+    // than a stale 0 (the render loop is unaffected either way).
     this.updateFpsLabel();
     this.voice.setPaused(paused);
     this.bgm.setPaused(paused);
@@ -1269,6 +1277,14 @@ export class App {
     timestampMilliseconds: number,
     renderMilliseconds: number,
   ) {
+    // Lazy window start on the first rendered frame after any reset: the
+    // window starts at this frame's rAF timestamp, so elapsed is always the
+    // same clock as the frames that count toward it. A wall-clock seed here
+    // is what left the window open forever after a pause (rAF timeline
+    // frozen, performance.now() advancing).
+    if (this.performanceWindowStartedAt === 0) {
+      this.performanceWindowStartedAt = timestampMilliseconds;
+    }
     this.performanceFrameCount += 1;
     this.performanceRenderTotal += renderMilliseconds;
     this.performanceRenderMaximum = Math.max(
@@ -1290,7 +1306,7 @@ export class App {
     this.root.dataset.averageRenderMs = String(this.averageRenderMilliseconds);
     this.root.dataset.maximumRenderMs = String(this.maximumRenderMilliseconds);
     this.updateFpsLabel();
-    this.resetPerformanceWindow(timestampMilliseconds);
+    this.resetPerformanceWindow();
   }
 
   private updateFpsLabel() {
@@ -1302,8 +1318,10 @@ export class App {
     this.fpsLabel.textContent = `${currentFps}/${limit}`;
   }
 
-  private resetPerformanceWindow(startedAt = performance.now()) {
-    this.performanceWindowStartedAt = startedAt;
+  private resetPerformanceWindow() {
+    // Leaving the start at 0 defers the next window start to the next rendered
+    // frame's rAF timestamp (see recordRenderPerformance), never a wall clock.
+    this.performanceWindowStartedAt = 0;
     this.performanceFrameCount = 0;
     this.performanceRenderTotal = 0;
     this.performanceRenderMaximum = 0;
