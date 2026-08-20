@@ -1090,6 +1090,10 @@ export class App {
 
   private setHostPaused(paused: boolean) {
     this.hostPaused = paused;
+    // WE's pause is the authoritative signal for an input-stream suspension:
+    // the mid-gesture pointerup is lost, so drop any active interaction and
+    // its pointer capture here instead of leaking it until a stale event.
+    if (paused) this.pointerController?.cancelActive();
     this.syncPausedState();
     this.syncDebugControls(this.settings);
   }

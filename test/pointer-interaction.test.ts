@@ -2,12 +2,35 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { PointerInteractionController, type PointerIntent } from "../dist/index.js";
 
+// The controller listens for input-loss signals (lostpointercapture on the
+// canvas, blur/visibilitychange on window/document), which do not exist in the
+// node test runner. Install minimal EventTarget stubs before any controller is
+// constructed.
+class FakeDocument extends EventTarget {
+  hidden = false;
+}
+Object.defineProperty(globalThis, "window", {
+  value: new EventTarget(),
+  writable: true,
+  configurable: true,
+});
+Object.defineProperty(globalThis, "document", {
+  value: new FakeDocument(),
+  writable: true,
+  configurable: true,
+});
+
 class FakeCanvas extends EventTarget {
   dataset: Record<string, string> = {};
   captured = new Set<number>();
   setPointerCapture(id: number) { this.captured.add(id); }
   hasPointerCapture(id: number) { return this.captured.has(id); }
-  releasePointerCapture(id: number) { this.captured.delete(id); }
+  releasePointerCapture(id: number) {
+    this.captured.delete(id);
+    // Mirrors the browser: releasing (or losing) capture dispatches
+    // lostpointercapture synchronously.
+    this.dispatchEvent(new Event("lostpointercapture"));
+  }
 }
 
 function pointer(type: string, x: number, y: number, id = 1) {
@@ -16,6 +39,33 @@ function pointer(type: string, x: number, y: number, id = 1) {
     button: { value: 0 }, clientX: { value: x }, clientY: { value: y }, pointerId: { value: id },
   });
   return event;
+}
+
+function install(completed: Array<{ intent: PointerIntent }> = []) {
+  const canvas = new FakeCanvas();
+  const cancelled = { count: 0 };
+  const renderer = {
+    hitTest: () => "body" as const,
+    beginPat: () => false,
+    updatePat() {}, endPat() {},
+    beginLook: () => true,
+    updateLook() {}, endLook() {},
+    cancelInteraction() { cancelled.count += 1; },
+  };
+  const controller = new PointerInteractionController(
+    canvas as unknown as HTMLCanvasElement,
+    renderer,
+    { dragThresholdPixels: 20 },
+    { onDialogueRequested: () => true, onInteractionCompleted: (value) => { completed.push(value); } },
+  );
+  controller.applySettings({
+    interactionsEnabled: true,
+    mouseTracking: true,
+    headPatting: true,
+    voiceEnabled: true,
+    introAnimation: true,
+  });
+  return { canvas, controller, cancelled };
 }
 
 test("promotes pointer movement to a look interaction at the injected threshold", () => {
@@ -50,6 +100,56 @@ test("promotes pointer movement to a look interaction at the injected threshold"
   canvas.dispatchEvent(pointer("pointerup", 121, 100));
   assert.deepEqual(calls, ["beginLook", "updateLook", "endLook"]);
   assert.equal(completed[0]?.intent, "look");
+  assert.equal(canvas.captured.size, 0);
+  controller.dispose();
+});
+
+test("lostpointercapture releases a leaked interaction and its capture", () => {
+  const completed: Array<{ intent: PointerIntent }> = [];
+  const { canvas, controller, cancelled } = install(completed);
+  canvas.dispatchEvent(pointer("pointerdown", 100, 100));
+  assert.equal(canvas.captured.size, 1);
+  canvas.dispatchEvent(new Event("lostpointercapture"));
+  assert.equal(canvas.captured.size, 0);
+  assert.equal(cancelled.count, 1);
+  assert.equal(controller.getSnapshot(), null);
+  // With the leak cleared, a stale pointerup must not complete an interaction.
+  canvas.dispatchEvent(pointer("pointerup", 100, 100));
+  assert.equal(completed.length, 0);
+  controller.dispose();
+});
+
+test("window blur releases a leaked interaction", () => {
+  const completed: Array<{ intent: PointerIntent }> = [];
+  const { canvas, controller, cancelled } = install(completed);
+  canvas.dispatchEvent(pointer("pointerdown", 100, 100));
+  assert.equal(canvas.captured.size, 1);
+  (globalThis.window as unknown as EventTarget).dispatchEvent(new Event("blur"));
+  assert.equal(canvas.captured.size, 0);
+  assert.equal(cancelled.count, 1);
+  controller.dispose();
+});
+
+test("document visibilitychange (hidden) releases a leaked interaction", () => {
+  const completed: Array<{ intent: PointerIntent }> = [];
+  const { canvas, controller, cancelled } = install(completed);
+  canvas.dispatchEvent(pointer("pointerdown", 100, 100));
+  const documentStub = globalThis.document as unknown as FakeDocument;
+  documentStub.hidden = true;
+  documentStub.dispatchEvent(new Event("visibilitychange"));
+  assert.equal(canvas.captured.size, 0);
+  assert.equal(cancelled.count, 1);
+  documentStub.hidden = false;
+  controller.dispose();
+});
+
+test("a normal pointerup does not recurse through the synthetic lostpointercapture", () => {
+  const completed: Array<{ intent: PointerIntent }> = [];
+  const { canvas, controller, cancelled } = install(completed);
+  canvas.dispatchEvent(pointer("pointerdown", 100, 100));
+  canvas.dispatchEvent(pointer("pointerup", 100, 100));
+  assert.equal(completed.length, 1);
+  assert.equal(cancelled.count, 0);
   assert.equal(canvas.captured.size, 0);
   controller.dispose();
 });

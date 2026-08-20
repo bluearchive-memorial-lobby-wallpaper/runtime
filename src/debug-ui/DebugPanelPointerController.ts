@@ -76,6 +76,11 @@ export class DebugPanelPointerController {
     window.addEventListener("pointerup", this.onPointerUp, true);
     window.addEventListener("pointercancel", this.onPointerUp, true);
     window.addEventListener("resize", this.scheduleRefresh);
+    // Same input-loss class as the interaction controller: a suspended input
+    // stream can drop the final pointerup, so an active range/scrollbar drag
+    // must not leak past a host pause, window blur, or hidden document.
+    window.addEventListener("blur", this.onWindowBlur);
+    document.addEventListener("visibilitychange", this.onVisibilityChange);
 
     for (const binding of this.scrollbars) {
       binding.viewport.addEventListener("scroll", this.scheduleRefresh);
@@ -111,6 +116,8 @@ export class DebugPanelPointerController {
     window.removeEventListener("pointerup", this.onPointerUp, true);
     window.removeEventListener("pointercancel", this.onPointerUp, true);
     window.removeEventListener("resize", this.scheduleRefresh);
+    window.removeEventListener("blur", this.onWindowBlur);
+    document.removeEventListener("visibilitychange", this.onVisibilityChange);
     for (const binding of this.scrollbars) {
       binding.viewport.removeEventListener("scroll", this.scheduleRefresh);
       const handler = this.trackPointerHandlers.get(binding.track);
@@ -183,6 +190,9 @@ export class DebugPanelPointerController {
     event.preventDefault();
     event.stopPropagation();
   };
+
+  private readonly onWindowBlur = () => { this.finishDrag(); };
+  private readonly onVisibilityChange = () => { if (document.hidden) this.finishDrag(); };
 
   private readonly onPointerUp = (event: PointerEvent) => {
     const active = this.active;

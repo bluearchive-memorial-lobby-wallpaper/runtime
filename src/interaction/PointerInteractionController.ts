@@ -42,6 +42,15 @@ export class PointerInteractionController<Settings extends WallpaperInteractionS
     canvas.addEventListener("pointerup", this.onPointerUp);
     canvas.addEventListener("pointercancel", this.onPointerCancel);
     canvas.addEventListener("contextmenu", this.onContextMenu);
+    // A pointerup can be lost entirely when the host suspends the CEF input
+    // stream mid-gesture (Wallpaper Engine pause/resume, window blur, hidden
+    // tab). The capture and active state must not leak on those paths:
+    // lostpointercapture is the authoritative signal for any engine-initiated
+    // release, and blur/visibilitychange cover the realistic input-loss cases
+    // where no pointerup is ever delivered.
+    canvas.addEventListener("lostpointercapture", this.onLostPointerCapture);
+    window.addEventListener("blur", this.onWindowBlur);
+    document.addEventListener("visibilitychange", this.onVisibilityChange);
   }
 
   private readonly dragThresholdPixels: number;
@@ -59,6 +68,9 @@ export class PointerInteractionController<Settings extends WallpaperInteractionS
     this.canvas.removeEventListener("pointerup", this.onPointerUp);
     this.canvas.removeEventListener("pointercancel", this.onPointerCancel);
     this.canvas.removeEventListener("contextmenu", this.onContextMenu);
+    this.canvas.removeEventListener("lostpointercapture", this.onLostPointerCapture);
+    window.removeEventListener("blur", this.onWindowBlur);
+    document.removeEventListener("visibilitychange", this.onVisibilityChange);
   }
 
   getSnapshot() { return this.active ? { ...this.active } : null; }
@@ -113,9 +125,16 @@ export class PointerInteractionController<Settings extends WallpaperInteractionS
     this.renderer.cancelInteraction(); this.releaseActive(event.pointerId);
   };
   private readonly onContextMenu = (event: MouseEvent) => event.preventDefault();
-  private cancelActive() { if (!this.active) return; this.renderer.cancelInteraction(); this.releaseActive(this.active.id); }
+  // Engine-initiated capture release (e.g. the browser retaking capture while
+  // the input stream is suspended) — the authoritative cleanup signal.
+  private readonly onLostPointerCapture = () => { this.cancelActive(); };
+  private readonly onWindowBlur = () => { this.cancelActive(); };
+  private readonly onVisibilityChange = () => { if (document.hidden) this.cancelActive(); };
+  cancelActive() { if (!this.active) return; this.renderer.cancelInteraction(); this.releaseActive(this.active.id); }
   private releaseActive(pointerId: number) {
-    if (this.canvas.hasPointerCapture(pointerId)) this.canvas.releasePointerCapture(pointerId);
+    // Clear active before releasing capture: releasePointerCapture dispatches
+    // lostpointercapture synchronously, and cancelActive must see a no-op.
     this.active = undefined; delete this.canvas.dataset.pointerIntent;
+    if (this.canvas.hasPointerCapture(pointerId)) this.canvas.releasePointerCapture(pointerId);
   }
 }
