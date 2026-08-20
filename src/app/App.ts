@@ -29,7 +29,7 @@ import type { InteractiveWallpaperDefinition } from "../definition.js";
 import type { VoiceLocale } from "../settings/propertyGroupPresets.js";
 import type { WallpaperLogger } from "../logging/WallpaperLogger.js";
 import type { WallpaperProperties } from "../wallpaper-engine/WallpaperEngineBridge.js";
-import { PANEL_TEXT, type PanelText } from "../i18n/panel.js";
+import { PANEL_TEXT, resolveLocalizedText, type PanelText } from "../i18n/panel.js";
 
 export interface WallpaperAppOptions {
   readonly definition: InteractiveWallpaperDefinition<VoiceLocale> & {
@@ -41,6 +41,7 @@ export interface WallpaperAppOptions {
   readonly findDialogueLine: (eventId: string) => any;
   readonly logger: WallpaperLogger;
   readonly panelText?: typeof PANEL_TEXT;
+  readonly titleByLocale?: Readonly<Record<string, string>>;
 }
 
 declare global {
@@ -85,6 +86,7 @@ export class App {
   private readonly viewportLabel: HTMLElement;
   private readonly renderResolutionLabel: HTMLElement;
   private readonly errorLabel: HTMLElement;
+  private readonly titleLabel: HTMLElement;
   private readonly loading: HTMLElement;
   private readonly loadingLabel: HTMLElement;
   private readonly openLogsButton: HTMLButtonElement;
@@ -223,6 +225,7 @@ export class App {
       HTMLElement,
     );
     this.errorLabel = this.getElement("status-error", HTMLElement);
+    this.titleLabel = this.getElement("status-title", HTMLElement);
     this.loading = this.getElement("loading", HTMLElement);
     this.loadingLabel = this.getElement("loading-label", HTMLElement);
     this.openLogsButton = this.getElement("debug-open-logs", HTMLButtonElement);
@@ -1370,6 +1373,8 @@ export class App {
         ? "—"
         : text.interactions[this.lastAction as InteractionMode];
     this.loadingLabel.textContent = text.loadingSpine;
+    const title = resolveLocalizedText(this.settings.panelLocale, this.options.titleByLocale);
+    if (title !== undefined) this.titleLabel.textContent = title;
     this.logViewerController.setLocale(this.settings.panelLocale);
     this.syncLogToggleButton();
     this.syncDebugPanelVisibility();

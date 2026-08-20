@@ -14,7 +14,7 @@ const WALLPAPER_SHELL_TEMPLATE = `<canvas id="wallpaper" aria-label="Memory Lobb
 
       <section id="status-panel" class="status-panel" aria-live="polite" aria-label="Wallpaper status and controls" data-panel-aria="panelAria">
         <p class="status-panel__eyebrow">OFFLINE EDITION · 1.0</p>
-        <h1 data-wallpaper-title>Memory Lobby Wallpaper</h1>
+        <h1 id="status-title" data-wallpaper-title>Memory Lobby Wallpaper</h1>
         <dl>
           <div><dt data-panel-text="status">状态</dt><dd id="status-phase">启动中</dd></div>
           <div><dt data-panel-text="animation">动画</dt><dd id="status-animation">—</dd></div>

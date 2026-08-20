@@ -288,3 +288,15 @@ export const PANEL_TEXT: Record<PanelLocale, PanelText> = {
 export function isPanelLocale(value: unknown): value is PanelLocale {
   return value === "zh-cn" || value === "en";
 }
+
+// Resolves a locale-keyed string (e.g. the wallpaper title) against a panel
+// locale. Returns undefined when there is no localized map, meaning the
+// caller should keep the current value untouched.
+export function resolveLocalizedText(
+  locale: string,
+  byLocale?: Readonly<Record<string, string>>,
+  fallback?: string,
+): string | undefined {
+  if (!byLocale) return undefined;
+  return byLocale[locale] ?? byLocale.en ?? fallback;
+}
