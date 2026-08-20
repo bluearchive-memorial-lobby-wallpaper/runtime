@@ -5,6 +5,10 @@ descriptions cite these entries verbatim in their Update Log, so the wording
 stays in end-user language — what changed for the person using the wallpaper,
 not how the code was rearranged.
 
+## 0.4.0
+- en: Added an Eco quality preset (720p / 2K / 30 FPS) for lower-end machines — a lighter visual option that reduces GPU load.
+- zh-cn: 新增「节能」画质档（720P / 2K / 30 FPS），面向低配设备——更轻量的画面选项，降低显卡负载。
+
 ## 0.3.2
 - en: Removed the placeholder "OFFLINE EDITION · 1.0" label shown in the debug panel when no edition is set.
 - zh-cn: 移除调试面板在未设置版本时显示的占位标签「OFFLINE EDITION · 1.0」。
