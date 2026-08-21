@@ -81,7 +81,15 @@ export class PointerInteractionController<Settings extends WallpaperInteractionS
     if (region === "background") return;
     let intent: PointerIntent = "dialogue";
     if (region === "head" && this.settings.headPatting) intent = "pat";
-    if (intent === "pat" && !this.renderer.beginPat()) return;
+    if (intent === "pat") {
+      // A skeleton without the pat motion must decline the gesture, never
+      // throw: the controller must stay ready for the next pointer event.
+      try {
+        if (!this.renderer.beginPat()) return;
+      } catch {
+        return;
+      }
+    }
     this.active = { id: event.pointerId, intent, startX: event.clientX, startY: event.clientY, lastX: event.clientX, lastY: event.clientY };
     this.canvas.setPointerCapture(event.pointerId);
     this.canvas.dataset.pointerIntent = intent;
@@ -99,12 +107,18 @@ export class PointerInteractionController<Settings extends WallpaperInteractionS
     active.lastX = event.clientX; active.lastY = event.clientY;
     if (active.intent === "dialogue" && this.settings?.mouseTracking) {
       const distance = Math.hypot(event.clientX - active.startX, event.clientY - active.startY);
-      if (distance >= this.dragThresholdPixels && this.renderer.beginLook()) {
-        active.intent = "look"; this.canvas.dataset.pointerIntent = "look";
+      if (distance >= this.dragThresholdPixels) {
+        let promoted = false;
+        try { promoted = this.renderer.beginLook(); } catch { /* keep the gesture as-is */ }
+        if (promoted) {
+          active.intent = "look"; this.canvas.dataset.pointerIntent = "look";
+        }
       }
     }
-    if (active.intent === "look") this.renderer.updateLook(event.clientX, event.clientY);
-    else if (active.intent === "pat") this.renderer.updatePat(deltaX, deltaY);
+    try {
+      if (active.intent === "look") this.renderer.updateLook(event.clientX, event.clientY);
+      else if (active.intent === "pat") this.renderer.updatePat(deltaX, deltaY);
+    } catch { /* a throwing renderer must not strand the active gesture */ }
     event.preventDefault();
   };
 
@@ -112,10 +126,16 @@ export class PointerInteractionController<Settings extends WallpaperInteractionS
     const active = this.active;
     if (!active || active.id !== event.pointerId) return;
     let accepted = true;
-    if (active.intent === "look") this.renderer.endLook();
-    else if (active.intent === "pat") this.renderer.endPat();
-    else if (this.settings && canTriggerDialogue(this.settings)) accepted = this.callbacks.onDialogueRequested();
-    else accepted = false;
+    try {
+      if (active.intent === "look") this.renderer.endLook();
+      else if (active.intent === "pat") this.renderer.endPat();
+      else if (this.settings && canTriggerDialogue(this.settings)) accepted = this.callbacks.onDialogueRequested();
+      else accepted = false;
+    } catch {
+      // The renderer or a callback must never be able to strand the gesture:
+      // the active pointer is released below no matter what.
+      accepted = false;
+    }
     this.callbacks.onInteractionCompleted({ intent: active.intent, accepted, startX: active.startX, startY: active.startY, endX: event.clientX, endY: event.clientY });
     this.releaseActive(event.pointerId); event.preventDefault();
   };

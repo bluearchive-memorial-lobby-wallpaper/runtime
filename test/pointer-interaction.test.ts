@@ -153,3 +153,80 @@ test("a normal pointerup does not recurse through the synthetic lostpointercaptu
   assert.equal(canvas.captured.size, 0);
   controller.dispose();
 });
+
+test("a throwing endLook still releases the active pointer so the next gesture can start", () => {
+  // Mirrors the real regression: a student skeleton without LookEnd_01_A made
+  // the renderer's endLook throw mid-gesture, which used to strand the active
+  // pointer and leave the wallpaper unresponsive. The controller must release
+  // the pointer and report the declined interaction no matter what the renderer
+  // throws.
+  const canvas = new FakeCanvas();
+  const completed: Array<{ intent: PointerIntent; accepted: boolean }> = [];
+  const renderer = {
+    hitTest: () => "body" as const,
+    beginPat: () => false,
+    updatePat() {},
+    endPat() {},
+    beginLook: () => true,
+    updateLook() {},
+    endLook() { throw new Error("Animation not found: LookEnd_01_A"); },
+    cancelInteraction() {},
+  };
+  const controller = new PointerInteractionController(
+    canvas as unknown as HTMLCanvasElement,
+    renderer,
+    { dragThresholdPixels: 20 },
+    { onDialogueRequested: () => true, onInteractionCompleted: (value) => completed.push(value) },
+  );
+  controller.applySettings({
+    interactionsEnabled: true,
+    mouseTracking: true,
+    headPatting: true,
+    voiceEnabled: true,
+    introAnimation: true,
+  });
+  canvas.dispatchEvent(pointer("pointerdown", 100, 100));
+  canvas.dispatchEvent(pointer("pointermove", 130, 100)); // promotes to look
+  canvas.dispatchEvent(pointer("pointerup", 130, 100));
+  assert.equal(canvas.captured.size, 0, "capture must be released even when endLook throws");
+  assert.equal(controller.getSnapshot(), null, "the gesture must not stay active");
+  assert.equal(completed.length, 1);
+  assert.equal(completed[0]?.accepted, false, "a throwing endLook reports the interaction as declined");
+  // The next gesture must be able to start from scratch.
+  canvas.dispatchEvent(pointer("pointerdown", 200, 200));
+  assert.equal(canvas.captured.size, 1);
+  canvas.dispatchEvent(pointer("pointerup", 200, 200));
+  assert.equal(completed.length, 2);
+  controller.dispose();
+});
+
+test("a throwing beginPat declines the gesture without leaking an active pointer", () => {
+  const canvas = new FakeCanvas();
+  const renderer = {
+    hitTest: () => "head" as const,
+    beginPat() { throw new Error("Animation not found: Pat_01_A"); },
+    updatePat() {},
+    endPat() {},
+    beginLook: () => true,
+    updateLook() {},
+    endLook() {},
+    cancelInteraction() {},
+  };
+  const controller = new PointerInteractionController(
+    canvas as unknown as HTMLCanvasElement,
+    renderer,
+    { dragThresholdPixels: 20 },
+    { onDialogueRequested: () => true, onInteractionCompleted: () => {} },
+  );
+  controller.applySettings({
+    interactionsEnabled: true,
+    mouseTracking: true,
+    headPatting: true,
+    voiceEnabled: true,
+    introAnimation: true,
+  });
+  canvas.dispatchEvent(pointer("pointerdown", 100, 100));
+  assert.equal(canvas.captured.size, 0, "a declined pat must not capture the pointer");
+  assert.equal(controller.getSnapshot(), null, "a declined pat must not leave an active gesture");
+  controller.dispose();
+});

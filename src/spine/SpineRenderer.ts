@@ -44,6 +44,7 @@ export interface RendererCallbacks {
 
 interface SpineData {
   skeleton: any;
+  skeletonData: any;
   state: any;
   eyeBone: any;
   headControlBone: any;
@@ -265,6 +266,7 @@ export class SpineRenderer {
     const headAnchorBone = this.requireBone(skeleton, this.definition.interactions.headAnchorBone);
     return {
       skeleton,
+      skeletonData,
       state,
       eyeBone,
       headControlBone,
@@ -410,14 +412,18 @@ export class SpineRenderer {
 
     this.clearInteractionTracks();
     const { state } = this.requireData();
-    const motionEntry = state.setAnimation(
+    const motionEntry = this.setAnimationSafe(
       this.definition.animations.tracks.motion,
       dialogue.motionAnimation,
       false,
     );
     state.addEmptyAnimation(this.definition.animations.tracks.motion, 0.35, 0);
-    state.setAnimation(this.definition.animations.tracks.attachment, dialogue.attachmentAnimation, false);
-    state.addEmptyAnimation(this.definition.animations.tracks.attachment, 0.35, 0);
+    // Some students ship a dialogue attachment pose only for a subset of the
+    // Talk animations; a missing one must not abort the dialogue.
+    if (this.setAnimationSafe(this.definition.animations.tracks.attachment, dialogue.attachmentAnimation, false)) {
+      state.addEmptyAnimation(this.definition.animations.tracks.attachment, 0.35, 0);
+    }
+    if (!motionEntry) return false;
     this.activeDialogue = index;
     this.activeDialogueEntry = motionEntry;
     this.dialogueFallbackRemaining =
@@ -428,12 +434,17 @@ export class SpineRenderer {
 
   beginLook(): boolean {
     if (this.interactionMode !== "idle") return false;
+    // The look motion is the one animation the interaction truly needs; if the
+    // student's skeleton does not ship it, refuse the interaction instead of
+    // throwing mid-gesture.
+    if (!this.hasAnimation(this.definition.interactions.look.animation)) return false;
     this.clearInteractionTracks();
-    const entry = this.requireData().state.setAnimation(
+    const entry = this.setAnimationSafe(
       this.definition.animations.tracks.motion,
       this.definition.interactions.look.animation,
       false,
     );
+    if (!entry) return false;
     entry.mixDuration = 0.16;
     this.setInteractionMode("look");
     return true;
@@ -454,33 +465,35 @@ export class SpineRenderer {
     if (this.interactionMode !== "look") return;
     const { state } = this.requireData();
     this.eyeTarget = { x: 0, y: 0 };
-    const motion = state.setAnimation(
-      this.definition.animations.tracks.motion,
-      this.definition.interactions.look.endMotionAnimation,
-      false,
-    );
-    motion.mixDuration = 0;
-    state.addEmptyAnimation(this.definition.animations.tracks.motion, 0.35, 0);
-    const attachment = state.setAnimation(
-      this.definition.animations.tracks.attachment,
-      this.definition.interactions.look.endAttachmentAnimation,
-      false,
-    );
-    attachment.mixDuration = 0;
-    state.addEmptyAnimation(this.definition.animations.tracks.attachment, 0.35, 0);
-    this.beginCooldown();
+    try {
+      const motion = this.setAnimationSafe(
+        this.definition.animations.tracks.motion,
+        this.definition.interactions.look.endMotionAnimation,
+        false,
+      );
+      if (motion) motion.mixDuration = 0;
+      state.addEmptyAnimation(this.definition.animations.tracks.motion, 0.35, 0);
+      // The look-end attachment pose does not exist on every student skeleton;
+      // skipping it must still leave the interaction fully resettable.
+      if (this.setAnimationSafe(this.definition.animations.tracks.attachment, this.definition.interactions.look.endAttachmentAnimation, false)) {
+        state.addEmptyAnimation(this.definition.animations.tracks.attachment, 0.35, 0);
+      }
+    } finally {
+      // Whatever the skeleton is missing, the gesture must always settle back
+      // into the cooldown gate — an unrecoverable "look" state is worse than a
+      // momentarily empty attachment track.
+      this.beginCooldown();
+    }
   }
 
   beginPat(): boolean {
     if (this.interactionMode !== "idle") return false;
+    if (!this.hasAnimation(this.definition.interactions.pat.motionAnimation)) return false;
     this.clearInteractionTracks();
-    const { state } = this.requireData();
-    state.setAnimation(this.definition.animations.tracks.motion, this.definition.interactions.pat.motionAnimation, false);
-    state.setAnimation(
-      this.definition.animations.tracks.attachment,
-      this.definition.interactions.pat.attachmentAnimation,
-      false,
-    );
+    this.setAnimationSafe(this.definition.animations.tracks.motion, this.definition.interactions.pat.motionAnimation, false);
+    // Pat attachment poses are not present on every student skeleton; the
+    // gesture still works from the motion track alone.
+    this.setAnimationSafe(this.definition.animations.tracks.attachment, this.definition.interactions.pat.attachmentAnimation, false);
     this.setInteractionMode("pat");
     return true;
   }
@@ -498,19 +511,20 @@ export class SpineRenderer {
     if (this.interactionMode !== "pat") return;
     const { state } = this.requireData();
     this.patTarget = 0;
-    state.setAnimation(
-      this.definition.animations.tracks.motion,
-      this.definition.interactions.pat.endMotionAnimation,
-      false,
-    );
-    state.addEmptyAnimation(this.definition.animations.tracks.motion, 0.35, 0);
-    state.setAnimation(
-      this.definition.animations.tracks.attachment,
-      this.definition.interactions.pat.endAttachmentAnimation,
-      false,
-    );
-    state.addEmptyAnimation(this.definition.animations.tracks.attachment, 0.35, 0);
-    this.beginCooldown();
+    try {
+      const motion = this.setAnimationSafe(
+        this.definition.animations.tracks.motion,
+        this.definition.interactions.pat.endMotionAnimation,
+        false,
+      );
+      if (motion) motion.mixDuration = 0;
+      state.addEmptyAnimation(this.definition.animations.tracks.motion, 0.35, 0);
+      if (this.setAnimationSafe(this.definition.animations.tracks.attachment, this.definition.interactions.pat.endAttachmentAnimation, false)) {
+        state.addEmptyAnimation(this.definition.animations.tracks.attachment, 0.35, 0);
+      }
+    } finally {
+      this.beginCooldown();
+    }
   }
 
   cancelInteraction() {
@@ -924,6 +938,23 @@ export class SpineRenderer {
   private requireData() {
     if (!this.spineData) throw new Error("Spine 模型尚未初始化。");
     return this.spineData;
+  }
+
+  // Skeleton animation sets differ per student (e.g. attachment poses only
+  // ship for Talk animations), so every animation name a definition references
+  // must be verified against the loaded skeleton before it is queued. A missing
+  // name would make spine throw on setAnimation and strand the interaction
+  // state machine mid-gesture; instead the safe setter returns null and the
+  // caller decides to skip that track.
+  private hasAnimation(name: string | undefined): boolean {
+    if (!name) return false;
+    const data = this.spineData?.skeletonData;
+    return Boolean(data?.findAnimation?.(name));
+  }
+
+  private setAnimationSafe(track: number, name: string | undefined, loop: boolean): any | null {
+    if (!this.hasAnimation(name)) return null;
+    return this.requireData().state.setAnimation(track, name as string, loop);
   }
 
   private waitForAssets(assetManager: any) {
