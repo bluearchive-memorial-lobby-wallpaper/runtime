@@ -37,6 +37,42 @@ test("media players resolve instance-owned asset paths", async () => {
   }
 });
 
+test("playIfAbsent plays a line exactly once across the sound+Talk double fire", async () => {
+  const originalAudio = globalThis.Audio;
+  globalThis.Audio = FakeAudio as unknown as typeof Audio;
+  FakeAudio.instances = [];
+  try {
+    const voice = new VoicePlayer((eventId, locale) => `./${locale}/${eventId}.ogg`, {
+      onEnded() {}, onError: assert.fail,
+    });
+    // Nothing playing yet -> the Talk fallback starts the line's voice.
+    await voice.playIfAbsent("line-1", "ja");
+    assert.equal(FakeAudio.instances.length, 1);
+    assert.equal(FakeAudio.instances[0]?.src, "./ja/line-1.ogg");
+    assert.equal(FakeAudio.instances[0]?.playCalls, 1);
+    // Same line still playing (the sound/ event arrives after Talk) -> no restart.
+    await voice.playIfAbsent("line-1", "ja");
+    assert.equal(FakeAudio.instances.length, 1);
+    assert.equal(FakeAudio.instances[0]?.playCalls, 1);
+    // A different line restarts.
+    await voice.playIfAbsent("line-2", "ja");
+    assert.equal(FakeAudio.instances.length, 2);
+    assert.equal(FakeAudio.instances[1]?.src, "./ja/line-2.ogg");
+    // A stopped line can play again (dialogue replay).
+    voice.stop();
+    await voice.playIfAbsent("line-1", "ja");
+    assert.equal(FakeAudio.instances.length, 3);
+    assert.equal(FakeAudio.instances[2]?.src, "./ja/line-1.ogg");
+    // A different locale is a different line.
+    await voice.playIfAbsent("line-1", "ko");
+    assert.equal(FakeAudio.instances.length, 4);
+    assert.equal(FakeAudio.instances[3]?.src, "./ko/line-1.ogg");
+    voice.dispose();
+  } finally {
+    globalThis.Audio = originalAudio;
+  }
+});
+
 test("BGM defers source loading until playback is enabled", async () => {
   const originalAudio = globalThis.Audio;
   globalThis.Audio = FakeAudio as unknown as typeof Audio;

@@ -814,9 +814,13 @@ export class App {
     this.eventLabel.textContent = this.lastSpineEvent;
     if (event.name.startsWith("sound/")) {
       const eventId = event.name.slice("sound/".length);
-      void this.voice.play(eventId, this.settings.voiceLocale);
+      void this.voice.playIfAbsent(eventId, this.settings.voiceLocale);
     } else if (event.name === "Talk" && event.stringValue) {
       this.subtitle.show(event.stringValue);
+      // Some dialogue animations carry only the Talk event (no sound/ event),
+      // so voice would never autoplay on its own. Fall back to playing the
+      // line's own voice; playIfAbsent dedupes the sound+Talk double fire.
+      void this.voice.playIfAbsent(event.stringValue, this.settings.voiceLocale);
     }
   }
 

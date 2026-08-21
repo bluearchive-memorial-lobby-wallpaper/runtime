@@ -21,6 +21,17 @@ export class VoicePlayer<Locale extends string = string> {
     this.primed = { eventId, locale, audio };
     void audio.play().catch(() => { if (this.primed?.audio === audio) this.releasePrimed(); });
   }
+  playIfAbsent(eventId: string, locale: Locale): Promise<void> | void {
+    // Spine dialogue animations fire the sound/ and Talk events for the same
+    // line in the same frame, and some carry only the Talk event. In both cases
+    // the line's voice should play exactly once: when the exact line is already
+    // the current voice, keep it (no restart); otherwise play it.
+    const current = this.current;
+    if (current && current.eventId.toLowerCase() === eventId.toLowerCase() && current.locale === locale) {
+      return;
+    }
+    return this.play(eventId, locale);
+  }
   async play(eventId: string, locale: Locale): Promise<void> {
     this.stop(); if (!this.enabled) return;
     const primed = this.primed?.eventId.toLowerCase() === eventId.toLowerCase() && this.primed.locale === locale ? this.primed.audio : undefined;
