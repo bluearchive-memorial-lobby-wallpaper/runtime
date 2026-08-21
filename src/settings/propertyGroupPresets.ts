@@ -165,3 +165,77 @@ export function isDialogueLanguagePreset(
 export function isDebugPreset(value: unknown): value is DebugPreset {
   return value === "off" || value === "panel" || value === "all" || value === "custom";
 }
+
+// ---------------------------------------------------------------------------
+// Dialogue language availability.
+//
+// Mirrors the pipeline's applyLanguageUiOptions
+// (pipeline/src/portfolio/resource-prepare.mjs): a preset is selectable only
+// when the wallpaper has real data for it. Chinese and Korean need both voice
+// and subtitles, English needs only subtitles; Japanese and custom are always
+// present. When the definition does not declare locales (older builds), voice
+// falls back to the full set and subtitles are inferred from non-empty
+// dialogue text keys.
+// ---------------------------------------------------------------------------
+
+const ALL_VOICE_LOCALES: readonly VoiceLocale[] = ["zh-cn", "ja", "ko"];
+const ALL_SUBTITLE_LOCALES: readonly SubtitleLocale[] = ["zh-cn", "ja", "ko", "en"];
+
+// The subset of a wallpaper definition these resolvers read. Deliberately
+// looser than WallpaperDefinition so callers are not forced to match its full
+// (generic) shape.
+export interface DialogueLanguageSource {
+  readonly audio?: {
+    readonly voiceLocales?: readonly string[];
+    readonly subtitleLocales?: readonly string[];
+  };
+  readonly dialogues?: readonly {
+    readonly lines: readonly { readonly text: Readonly<Record<string, string>> }[];
+  }[];
+}
+
+export function resolveAvailableVoiceLocales(
+  definition: DialogueLanguageSource,
+): string[] {
+  if (definition.audio?.voiceLocales !== undefined) return [...definition.audio.voiceLocales];
+  return [...ALL_VOICE_LOCALES];
+}
+
+export function resolveAvailableSubtitleLocales(
+  definition: DialogueLanguageSource,
+): string[] {
+  if (definition.audio?.subtitleLocales !== undefined) return [...definition.audio.subtitleLocales];
+  const inferred = new Set<string>();
+  for (const dialogue of definition.dialogues ?? []) {
+    for (const line of dialogue.lines) {
+      for (const [locale, text] of Object.entries(line.text)) {
+        if (typeof text === "string" && text.trim().length > 0) inferred.add(locale);
+      }
+    }
+  }
+  return inferred.size > 0 ? [...inferred] : [...ALL_SUBTITLE_LOCALES];
+}
+
+export function resolveDialoguePresetLocales(
+  voiceLocales: readonly string[],
+  subtitleLocales: readonly string[],
+): DialogueLanguagePreset[] {
+  const voice = new Set(voiceLocales);
+  const subtitles = new Set(subtitleLocales);
+  const presets: DialogueLanguagePreset[] = [];
+  if (voice.has("zh-cn") && subtitles.has("zh-cn")) presets.push("zh-cn");
+  presets.push("ja");
+  if (voice.has("ko") && subtitles.has("ko")) presets.push("ko");
+  if (subtitles.has("en")) presets.push("en");
+  presets.push("custom");
+  return presets;
+}
+
+export function resolveDefaultDialogueLocale(
+  voiceLocales: readonly string[],
+  subtitleLocales: readonly string[],
+): string {
+  return (
+    voiceLocales.includes("zh-cn") && subtitleLocales.includes("zh-cn") ? "zh-cn" : "ja"
+  );
+}

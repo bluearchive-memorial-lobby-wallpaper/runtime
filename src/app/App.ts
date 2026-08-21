@@ -26,7 +26,13 @@ import {
   type SpineEventDetail,
 } from "../spine/SpineRenderer.js";
 import type { InteractiveWallpaperDefinition } from "../definition.js";
-import type { VoiceLocale } from "../settings/propertyGroupPresets.js";
+import {
+  resolveAvailableSubtitleLocales,
+  resolveAvailableVoiceLocales,
+  resolveDefaultDialogueLocale,
+  resolveDialoguePresetLocales,
+  type VoiceLocale,
+} from "../settings/propertyGroupPresets.js";
 import type { WallpaperLogger } from "../logging/WallpaperLogger.js";
 import type { WallpaperProperties } from "../wallpaper-engine/WallpaperEngineBridge.js";
 import { PANEL_TEXT, resolveLocalizedText, type PanelText } from "../i18n/panel.js";
@@ -159,6 +165,11 @@ export class App {
   private readonly logViewerController: LogViewerController;
   private readonly propertyGroupToggleButtons: readonly HTMLButtonElement[];
   private readonly subgroupToggleButtons: readonly HTMLButtonElement[];
+  // Available dialogue language options, derived from the definition and used
+  // to narrow the debug panel selects (see applyDebugLanguageOptions).
+  private availablePresetLocales: readonly string[] = [];
+  private availableVoiceLocales: readonly string[] = [];
+  private availableSubtitleLocales: readonly string[] = [];
   private readonly adapter = new WallpaperEngineAdapter();
   private readonly subtitle: SubtitlePresenter;
   private readonly voice: VoicePlayer<VoiceLocale>;
@@ -522,6 +533,7 @@ export class App {
         this.options.logger.info("interaction", `log viewer ${action}`, details),
       onVisibilityChange: () => this.syncLogToggleButton(),
     });
+    this.applyDebugLanguageOptions();
   }
 
   async start() {
@@ -1157,6 +1169,48 @@ export class App {
     this.adapter.setUserPropertiesForDebug({ voicelanguage: locale });
   }
 
+  // Narrow the debug panel language selects to the languages the wallpaper
+  // actually provides. A preset/subtitle/voice that has no real data is
+  // removed, not greyed out (Wallpaper Engine combo options carry no disabled
+  // state); the current value is re-anchored when it no longer exists.
+  private applyDebugLanguageOptions() {
+    const definition = this.options.definition;
+    this.availableVoiceLocales = resolveAvailableVoiceLocales(definition);
+    this.availableSubtitleLocales = resolveAvailableSubtitleLocales(definition);
+    this.availablePresetLocales = resolveDialoguePresetLocales(
+      this.availableVoiceLocales,
+      this.availableSubtitleLocales,
+    );
+    const defaultLocale = resolveDefaultDialogueLocale(
+      this.availableVoiceLocales,
+      this.availableSubtitleLocales,
+    );
+    this.filterLanguageSelect(this.dialogueLanguagePresetSelect, this.availablePresetLocales, defaultLocale);
+    this.filterLanguageSelect(this.voiceLanguageSelect, this.availableVoiceLocales, defaultLocale);
+    this.filterLanguageSelect(this.primarySubtitleLanguageSelect, this.availableSubtitleLocales, defaultLocale);
+    this.filterLanguageSelect(this.secondarySubtitleLanguageSelect, this.availableSubtitleLocales, defaultLocale);
+  }
+
+  private filterLanguageSelect(
+    select: HTMLSelectElement,
+    availableValues: readonly string[],
+    fallback: string,
+  ) {
+    const available = new Set(availableValues);
+    for (let index = select.options.length - 1; index >= 0; index -= 1) {
+      if (!available.has(select.options[index]!.value)) select.remove(index);
+    }
+    if (!available.has(select.value)) select.value = fallback;
+  }
+
+  // Applies a settings value to a select only when the option still exists
+  // (the value may come from stale host properties that the narrowed option
+  // list no longer exposes); otherwise keeps the re-anchored fallback.
+  private setSelectValue(select: HTMLSelectElement, value: string) {
+    const options = new Set(Array.from(select.options, (option) => option.value));
+    select.value = options.has(value) ? value : select.value;
+  }
+
   private syncDebugControls(settings: Readonly<WallpaperSettings>) {
     const visibility = resolvePropertyGroupVisibility(settings);
     const voiceVolume = Math.round(settings.voiceVolume * 100);
@@ -1196,19 +1250,19 @@ export class App {
     this.voiceVolumeOutput.value = `${voiceVolume}%`;
     this.dialoguePlaybackGroup.hidden = !visibility.dialogueControls;
     this.dialogueAutoPlayCheckbox.checked = settings.dialogueAutoPlay;
-    this.dialogueLanguagePresetSelect.value = settings.dialogueLanguagePreset;
+    this.setSelectValue(this.dialogueLanguagePresetSelect, settings.dialogueLanguagePreset);
     this.dialogueCustomControls.hidden = !visibility.dialogueCustom;
-    this.voiceLanguageSelect.value = settings.voiceLocale;
+    this.setSelectValue(this.voiceLanguageSelect, settings.voiceLocale);
     this.showSubtitlesCheckbox.checked = settings.subtitlesEnabled;
     this.primarySubtitleLanguageControl.hidden =
       !visibility.primarySubtitleLanguage;
-    this.primarySubtitleLanguageSelect.value = settings.primarySubtitleLocale;
+    this.setSelectValue(this.primarySubtitleLanguageSelect, settings.primarySubtitleLocale);
     this.showSecondarySubtitlesControl.hidden = !visibility.secondarySubtitles;
     this.showSecondarySubtitlesCheckbox.checked =
       settings.secondarySubtitlesEnabled;
     this.secondarySubtitleLanguageControl.hidden =
       !visibility.secondarySubtitleLanguage;
-    this.secondarySubtitleLanguageSelect.value = settings.secondarySubtitleLocale;
+    this.setSelectValue(this.secondarySubtitleLanguageSelect, settings.secondarySubtitleLocale);
     this.subtitleAlignmentSelect.value = settings.subtitleAlignment;
     this.subtitlePositionSelect.value = settings.subtitlePosition;
     this.subtitleCustomPositionControls.hidden =

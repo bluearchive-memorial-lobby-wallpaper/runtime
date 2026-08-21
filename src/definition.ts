@@ -75,6 +75,10 @@ export interface WallpaperDefinition<VoiceLocale extends string = string> {
   readonly audio?: {
     readonly bgm?: { readonly title: string; readonly path: string };
     readonly voicePath?: (eventId: string, locale: VoiceLocale) => string;
+    /** 壁纸实际可用的语音语言（config 的 VOICE_LOCALES）。缺省时按全部语音语言处理。 */
+    readonly voiceLocales?: readonly string[];
+    /** 壁纸实际可用的字幕语言（config 的 SUBTITLE_LOCALES）。缺省时从对话文本键推断。 */
+    readonly subtitleLocales?: readonly string[];
   };
 }
 

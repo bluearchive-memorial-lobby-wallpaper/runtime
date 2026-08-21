@@ -5,6 +5,10 @@ descriptions cite these entries verbatim in their Update Log, so the wording
 stays in end-user language — what changed for the person using the wallpaper,
 not how the code was rearranged.
 
+## 0.4.3
+- en: The debug panel's language options now only list the languages the wallpaper actually provides — incomplete presets (e.g. voice or subtitles a character lacks) are no longer selectable.
+- zh-cn: 调试面板的语言选项现在只列出壁纸实际提供的语言——不完整的预设（如角色缺失的语音或字幕）不再可选。
+
 ## 0.4.2
 - en: Fixed an interaction that could freeze after looking or patting — characters whose skeleton lacks some animations no longer get stuck and keep responding to input.
 - zh-cn: 修复视线跟随或摸头后交互可能卡住的问题——骨架缺少部分动画的角色不再卡死，交互恢复正常。
