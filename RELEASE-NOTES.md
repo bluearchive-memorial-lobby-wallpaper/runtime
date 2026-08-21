@@ -5,6 +5,10 @@ descriptions cite these entries verbatim in their Update Log, so the wording
 stays in end-user language — what changed for the person using the wallpaper,
 not how the code was rearranged.
 
+## 0.4.2
+- en: Fixed an interaction that could freeze after looking or patting — characters whose skeleton lacks some animations no longer get stuck and keep responding to input.
+- zh-cn: 修复视线跟随或摸头后交互可能卡住的问题——骨架缺少部分动画的角色不再卡死，交互恢复正常。
+
 ## 0.4.1
 - en: Fixed a wallpaper showing dialogue subtitles without voice on some characters — dialogue that emits only a subtitle event now also plays the line's voice.
 - zh-cn: 修复部分角色壁纸对话只有字幕没有语音的问题——仅触发字幕事件的对话现在也会播放对应语音。
