@@ -26,6 +26,7 @@ import {
   type SpineEventDetail,
 } from "../spine/SpineRenderer.js";
 import type { InteractiveWallpaperDefinition } from "../definition.js";
+import { renderAudioProbe } from "../audio/audioProbe.js";
 import {
   resolveAvailableSubtitleLocales,
   resolveAvailableVoiceLocales,
@@ -895,6 +896,18 @@ export class App {
       setUserProperties: (properties: Record<string, boolean | number | string>) =>
         this.adapter.setUserPropertiesForDebug(properties),
       clearSessionOverrides: () => this.adapter.clearSessionOverrides(),
+      captureAudioProbe: async (args:
+        | { source: "bgm"; durationSeconds?: number }
+        | { source: "voice"; eventId: string; locale: string; durationSeconds?: number }) => {
+        const audio = this.options.definition.audio;
+        const path = args.source === "bgm"
+          ? audio.bgm.path
+          : audio.voicePath(args.eventId, args.locale as VoiceLocale);
+        return renderAudioProbe({
+          path: new URL(path, location.href).href,
+          durationSeconds: args.durationSeconds,
+        });
+      },
     };
 
     this.statusPanel.addEventListener("click", (event) => {

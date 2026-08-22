@@ -4,6 +4,7 @@ export * from "./dialogue/DialoguePlaybackSequence.js";
 export * from "./dialogue/SubtitlePresenter.js";
 export * from "./audio/BgmPlayer.js";
 export * from "./audio/VoicePlayer.js";
+export * from "./audio/audioProbe.js";
 export * from "./render/FrameLimiter.js";
 export * from "./layout/viewport.js";
 export * from "./layout/modelTransform.js";
