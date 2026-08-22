@@ -494,6 +494,10 @@ export class SpineRenderer {
     // Pat attachment poses are not present on every student skeleton; the
     // gesture still works from the motion track alone.
     this.setAnimationSafe(this.definition.animations.tracks.attachment, this.definition.interactions.pat.attachmentAnimation, false);
+    // The attachment track starts after the motion track, so its start event
+    // would otherwise overwrite currentAnimation; the snapshot reports the
+    // primary motion animation, not the attachment pose.
+    this.setCurrentAnimation(this.definition.interactions.pat.motionAnimation);
     this.setInteractionMode("pat");
     return true;
   }

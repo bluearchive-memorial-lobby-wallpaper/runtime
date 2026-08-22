@@ -29,6 +29,12 @@ export interface PointerInteractionCallbacks {
 export class PointerInteractionController<Settings extends WallpaperInteractionSettings = WallpaperInteractionSettings> {
   private settings?: Readonly<Settings>;
   private active?: { id: number; intent: PointerIntent; startX: number; startY: number; lastX: number; lastY: number };
+  // Set when lostpointercapture fires without a pointerup. A CDP-synthesized
+  // mouse stream (browser acceptance) can drop pointer capture across a delayed
+  // mouseMoved and then keep delivering pointermove; a genuine engine-initiated
+  // release never delivers another pointer event. Deferring the cancel to the
+  // next frame lets a resumed gesture survive while real releases still cancel.
+  private captureLossPending = false;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -62,6 +68,7 @@ export class PointerInteractionController<Settings extends WallpaperInteractionS
   }
 
   dispose() {
+    this.captureLossPending = false;
     this.cancelActive();
     this.canvas.removeEventListener("pointerdown", this.onPointerDown);
     this.canvas.removeEventListener("pointermove", this.onPointerMove);
@@ -102,6 +109,9 @@ export class PointerInteractionController<Settings extends WallpaperInteractionS
       this.canvas.dataset.hitRegion = this.settings?.interactionsEnabled ? this.renderer.hitTest(event.clientX, event.clientY) : "background";
       return;
     }
+    // A pointermove arriving after a spurious lostpointercapture proves the
+    // gesture resumed; cancel the deferred cancel and keep the interaction.
+    this.captureLossPending = false;
     const deltaX = event.clientX - active.lastX;
     const deltaY = event.clientY - active.lastY;
     active.lastX = event.clientX; active.lastY = event.clientY;
@@ -147,10 +157,27 @@ export class PointerInteractionController<Settings extends WallpaperInteractionS
   private readonly onContextMenu = (event: MouseEvent) => event.preventDefault();
   // Engine-initiated capture release (e.g. the browser retaking capture while
   // the input stream is suspended) — the authoritative cleanup signal.
-  private readonly onLostPointerCapture = () => { this.cancelActive(); };
+  private readonly onLostPointerCapture = () => {
+    if (!this.active) return;
+    this.captureLossPending = true;
+    // Defer one frame: a CDP-synthesized move that follows a spurious capture
+    // loss in the same frame re-asserts the gesture via onPointerMove. A real
+    // engine release never delivers another pointer event, so cancelActive
+    // still runs next frame.
+    requestAnimationFrame(() => {
+      if (!this.captureLossPending) return;
+      this.captureLossPending = false;
+      this.cancelActive();
+    });
+  };
   private readonly onWindowBlur = () => { this.cancelActive(); };
   private readonly onVisibilityChange = () => { if (document.hidden) this.cancelActive(); };
-  cancelActive() { if (!this.active) return; this.renderer.cancelInteraction(); this.releaseActive(this.active.id); }
+  cancelActive() {
+    this.captureLossPending = false;
+    if (!this.active) return;
+    this.renderer.cancelInteraction();
+    this.releaseActive(this.active.id);
+  }
   private releaseActive(pointerId: number) {
     // Clear active before releasing capture: releasePointerCapture dispatches
     // lostpointercapture synchronously, and cancelActive must see a no-op.

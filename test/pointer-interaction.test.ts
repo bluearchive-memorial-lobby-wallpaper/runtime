@@ -20,6 +20,18 @@ Object.defineProperty(globalThis, "document", {
   configurable: true,
 });
 
+// The controller defers a lostpointercapture cancel to the next frame so a
+// resumed pointermove (CDP-synthesized streams drop capture mid-gesture) can
+// keep the interaction. Stub requestAnimationFrame so tests control when the
+// deferred cancel runs.
+let rafCallbacks: Array<() => void> = [];
+Object.defineProperty(globalThis, "requestAnimationFrame", {
+  value: (callback: () => void) => { rafCallbacks.push(callback); return rafCallbacks.length; },
+  writable: true,
+  configurable: true,
+});
+const flushRaf = () => { const callbacks = rafCallbacks; rafCallbacks = []; for (const callback of callbacks) callback(); };
+
 class FakeCanvas extends EventTarget {
   dataset: Record<string, string> = {};
   captured = new Set<number>();
@@ -110,12 +122,35 @@ test("lostpointercapture releases a leaked interaction and its capture", () => {
   canvas.dispatchEvent(pointer("pointerdown", 100, 100));
   assert.equal(canvas.captured.size, 1);
   canvas.dispatchEvent(new Event("lostpointercapture"));
+  // The cancel is deferred one frame; the gesture must still be live until the
+  // frame callback runs, so a resumed pointermove can keep it.
+  assert.equal(canvas.captured.size, 1);
+  assert.equal(cancelled.count, 0);
+  flushRaf();
   assert.equal(canvas.captured.size, 0);
   assert.equal(cancelled.count, 1);
   assert.equal(controller.getSnapshot(), null);
   // With the leak cleared, a stale pointerup must not complete an interaction.
   canvas.dispatchEvent(pointer("pointerup", 100, 100));
   assert.equal(completed.length, 0);
+  controller.dispose();
+});
+
+test("a pointermove after a spurious lostpointercapture keeps the gesture live", () => {
+  const completed: Array<{ intent: PointerIntent }> = [];
+  const { canvas, controller, cancelled } = install(completed);
+  canvas.dispatchEvent(pointer("pointerdown", 100, 100));
+  canvas.dispatchEvent(new Event("lostpointercapture"));
+  // CDP drops pointer capture across a delayed mouseMoved but keeps delivering
+  // pointermove; the resumed move must cancel the deferred release.
+  canvas.dispatchEvent(pointer("pointermove", 110, 100));
+  flushRaf();
+  assert.equal(cancelled.count, 0, "the resumed gesture must survive the capture loss");
+  assert.notEqual(controller.getSnapshot(), null, "the gesture stays active");
+  assert.equal(canvas.captured.size, 1);
+  canvas.dispatchEvent(pointer("pointerup", 110, 100));
+  assert.equal(completed.length, 1);
+  assert.equal(canvas.captured.size, 0);
   controller.dispose();
 });
 
