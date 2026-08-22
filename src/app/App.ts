@@ -190,6 +190,7 @@ export class App {
   private startupComplete = false;
   private hostPaused = false;
   private dialogueContinuationPending = false;
+  private readonly dialogueTrace: string[] = [];
   private rendererUnavailable = false;
   // 0 means "no window in progress": the window starts lazily on the first
   // rendered frame's requestAnimationFrame timestamp, so the measurement
@@ -834,6 +835,8 @@ export class App {
       // so voice would never autoplay on its own. Fall back to playing the
       // line's own voice; playIfAbsent dedupes the sound+Talk double fire.
       void this.voice.playIfAbsent(event.stringValue, this.settings.voiceLocale);
+      this.dialogueTrace.push(event.stringValue.toLowerCase());
+      if (this.dialogueTrace.length > 256) this.dialogueTrace.shift();
     }
   }
 
@@ -874,6 +877,7 @@ export class App {
         lastSpineEvent: this.lastSpineEvent,
         nextDialogueIndex: this.dialoguePlayback.nextIndex,
         dialogueAutoPlayActive: this.dialoguePlayback.automaticPlaybackActive,
+        dialogueTrace: [...this.dialogueTrace],
         fpsLimit: this.settings.fpsLimit,
         settings: { ...this.settings },
         settingsState: this.adapter.settingsState,
@@ -891,6 +895,8 @@ export class App {
       replayIntro: () => this.replaySession(),
       skipToIdle: () => this.skipToIdle(),
       playDialogue: (index: number) => this.playNextDialogue(index),
+      startAutomaticDialoguePlayback: () => this.playNextDialogue(undefined, true),
+      clearDialogueTrace: () => { this.dialogueTrace.length = 0; },
       setFpsLimit: (fps: number) => this.adapter.setFpsLimitForDebug(fps),
       retryBgm: () => this.bgm.retryFromUserGesture(),
       setUserProperties: (properties: Record<string, boolean | number | string>) =>
