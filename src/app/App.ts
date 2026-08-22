@@ -896,6 +896,10 @@ export class App {
       skipToIdle: () => this.skipToIdle(),
       playDialogue: (index: number) => this.playNextDialogue(index),
       startAutomaticDialoguePlayback: () => this.playNextDialogue(undefined, true),
+      resetDialoguePlayback: () => {
+        this.dialoguePlayback.reset();
+        this.skipToIdle();
+      },
       clearDialogueTrace: () => { this.dialogueTrace.length = 0; },
       setFpsLimit: (fps: number) => this.adapter.setFpsLimitForDebug(fps),
       retryBgm: () => this.bgm.retryFromUserGesture(),
