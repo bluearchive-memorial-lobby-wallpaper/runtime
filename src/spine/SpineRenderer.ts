@@ -66,6 +66,30 @@ interface PlaybackSnapshot {
   tracks: Array<{ trackIndex: number; entry: TrackEntrySnapshot }>;
 }
 
+/**
+ * Spine exposes its sentinel empty animation differently between runtime
+ * families. Spine 4.x exposes emptyAnimation() as a factory, while older
+ * runtimes expose the sentinel as a value. Keep the compatibility handling in
+ * one place so playback restoration never treats the sentinel name as a real
+ * animation.
+ */
+export function isEmptySpineAnimation(animation: any, animationState: any): boolean {
+  if (!animation) return true;
+
+  const emptyAnimation = animationState?.emptyAnimation;
+  if (typeof emptyAnimation === "function") {
+    try {
+      if (animation === emptyAnimation.call(animationState)) return true;
+    } catch {
+      // Fall through to the name-based compatibility check.
+    }
+  } else if (animation === emptyAnimation) {
+    return true;
+  }
+
+  return animation.name === "<empty>";
+}
+
 const TRACK_ENTRY_VALUES = [
   "animationStart",
   "animationEnd",
@@ -299,7 +323,7 @@ export class SpineRenderer {
     }
     return {
       animationName: entry.animation?.name ?? "",
-      empty: entry.animation === this.spine.AnimationState.emptyAnimation,
+      empty: isEmptySpineAnimation(entry.animation, this.spine.AnimationState),
       loop: Boolean(entry.loop),
       activeDialogue: entry === this.activeDialogueEntry,
       values,
