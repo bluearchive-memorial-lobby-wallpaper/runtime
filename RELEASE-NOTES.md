@@ -5,6 +5,10 @@ descriptions cite these entries verbatim in their Update Log, so the wording
 stays in end-user language — what changed for the person using the wallpaper,
 not how the code was rearranged.
 
+## 0.5.0
+- en: Fixed a crash when switching model quality during dialogue playback. Improved playback-state restoration across model resolution changes and WebGL context recovery.
+- zh-cn: 修复对话播放期间切换模型画质可能导致渲染器崩溃的问题，并改进模型分辨率切换与 WebGL 上下文恢复时的播放状态恢复。
+
 ## 0.4.3
 - en: The debug panel's language options now only list the languages the wallpaper actually provides — incomplete presets (e.g. voice or subtitles a character lacks) are no longer selectable.
 - zh-cn: 调试面板的语言选项现在只列出壁纸实际提供的语言——不完整的预设（如角色缺失的语音或字幕）不再可选。
