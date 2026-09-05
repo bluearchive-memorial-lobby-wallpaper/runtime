@@ -5,6 +5,10 @@ descriptions cite these entries verbatim in their Update Log, so the wording
 stays in end-user language — what changed for the person using the wallpaper,
 not how the code was rearranged.
 
+## 0.5.1
+- en: Fixed abnormal over-bright lighting in affected memorial lobby wallpapers, restoring clearer highlight detail closer to the intended in-game presentation.
+- zh-cn: 修复部分记忆大厅壁纸异常偏亮的光照渲染，恢复更清晰的高光细节，使画面更接近游戏内预期效果。
+
 ## 0.5.0
 - en: Fixed a crash when switching model quality during dialogue playback. Improved playback-state restoration across model resolution changes and WebGL context recovery.
 - zh-cn: 修复对话播放期间切换模型画质可能导致渲染器崩溃的问题，并改进模型分辨率切换与 WebGL 上下文恢复时的播放状态恢复。
