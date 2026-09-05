@@ -1,5 +1,7 @@
 import type { WallpaperDefinition } from "./definition.js";
 
+const SPINE_BLEND_MODES = new Set(["normal", "additive", "multiply", "screen"]);
+
 export interface DefinitionIssue {
   readonly path: string;
   readonly message: string;
@@ -18,6 +20,17 @@ export function validateWallpaperDefinition(
   }
   if (definition.model.designViewport.width <= 0 || definition.model.designViewport.height <= 0) {
     issues.push({ path: "model.designViewport", message: "width and height must be positive" });
+  }
+  for (const [slotName, blendMode] of Object.entries(definition.model.slotBlendModeOverrides ?? {})) {
+    if (!slotName.trim()) {
+      issues.push({ path: "model.slotBlendModeOverrides", message: "slot names must not be empty" });
+    }
+    if (!SPINE_BLEND_MODES.has(blendMode)) {
+      issues.push({
+        path: `model.slotBlendModeOverrides.${slotName}`,
+        message: "must be normal, additive, multiply, or screen",
+      });
+    }
   }
 
   const dialogueIndexes = new Set<number>();

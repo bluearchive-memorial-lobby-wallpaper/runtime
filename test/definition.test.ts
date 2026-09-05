@@ -43,6 +43,25 @@ test("reports duplicate dialogue identities", () => {
   assert.equal(validateWallpaperDefinition(definition).length, 2);
 });
 
+test("reports invalid Spine slot blend overrides", () => {
+  const definition = defineWallpaper({
+    schemaVersion: 1,
+    id: "example",
+    model: {
+      binary: "model/example.skel",
+      atlases: { base: "model/example.atlas" },
+      spineVersion: "3.8.99",
+      designViewport: { width: 1, height: 1, centerX: 0, centerY: 0 },
+      slotBlendModeOverrides: { top_light: "soft-light" as "screen" },
+    },
+    animations: { idle: "Idle", tracks: { base: 0, motion: 1, attachment: 2 } },
+  });
+  assert.deepEqual(validateWallpaperDefinition(definition), [{
+    path: "model.slotBlendModeOverrides.top_light",
+    message: "must be normal, additive, multiply, or screen",
+  }]);
+});
+
 test("resolves dialogue lines without case sensitivity", () => {
   const resolve = createDialogueLineResolver([{
     index: 1,

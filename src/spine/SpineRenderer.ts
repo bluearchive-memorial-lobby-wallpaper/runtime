@@ -11,6 +11,7 @@ import {
 } from "../settings/resolution.js";
 import { resetAndApplyPlaybackPose, updateSkeletonWorldTransform } from "./resetPlaybackPose.js";
 import type { InteractiveWallpaperDefinition } from "../definition.js";
+import type { SpineBlendMode } from "../definition.js";
 import type { HitRegion } from "../interaction/PointerInteractionController.js";
 
 export interface SpineRendererSettings {
@@ -64,6 +65,30 @@ interface TrackEntrySnapshot {
 
 interface PlaybackSnapshot {
   tracks: Array<{ trackIndex: number; entry: TrackEntrySnapshot }>;
+}
+
+type SpineSlotData = { name: string; blendMode: number };
+
+export function applySpineSlotBlendModeOverrides(
+  skeletonData: { slots?: SpineSlotData[] },
+  overrides: Readonly<Record<string, SpineBlendMode>> | undefined,
+  blendModes: Record<'Normal' | 'Additive' | 'Multiply' | 'Screen', number>,
+): void {
+  if (!overrides) return;
+
+  const resolvedModes: Record<SpineBlendMode, number> = {
+    normal: blendModes.Normal,
+    additive: blendModes.Additive,
+    multiply: blendModes.Multiply,
+    screen: blendModes.Screen,
+  };
+  const slots = new Map((skeletonData.slots ?? []).map((slot) => [slot.name, slot]));
+
+  for (const [slotName, blendMode] of Object.entries(overrides)) {
+    const slot = slots.get(slotName);
+    if (!slot) throw new Error(`Spine model does not contain blend override slot: ${slotName}`);
+    slot.blendMode = resolvedModes[blendMode];
+  }
 }
 
 /**
@@ -258,6 +283,11 @@ export class SpineRenderer {
         `Spine 版本不匹配：期望 ${this.definition.model.spineVersion}，实际 ${skeletonData.version}`,
       );
     }
+    applySpineSlotBlendModeOverrides(
+      skeletonData,
+      this.definition.model.slotBlendModeOverrides,
+      this.spine.BlendMode,
+    );
 
     const skeleton = new this.spine.Skeleton(skeletonData);
     skeleton.setToSetupPose();

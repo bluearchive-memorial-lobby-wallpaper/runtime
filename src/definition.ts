@@ -1,5 +1,6 @@
 export type Locale = string;
 export type TextureTier = string;
+export type SpineBlendMode = "normal" | "additive" | "multiply" | "screen";
 
 export interface LocalizedDialogueLine {
   readonly id: string;
@@ -24,6 +25,11 @@ export interface SpineModelDefinition {
     readonly centerX: number;
     readonly centerY: number;
   };
+  /**
+   * Per-slot blend modes confirmed for a model when its authored rendering
+   * convention differs from the Spine export metadata.
+   */
+  readonly slotBlendModeOverrides?: Readonly<Record<string, SpineBlendMode>>;
 }
 
 export interface AnimationDefinition {
