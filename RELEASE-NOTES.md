@@ -5,10 +5,6 @@ descriptions cite these entries verbatim in their Update Log, so the wording
 stays in end-user language — what changed for the person using the wallpaper,
 not how the code was rearranged.
 
-## 0.5.2
-- en: Improved BGM playback diagnostics by binding audio probes to the packaged source resource.
-- zh-cn: 改进 BGM 播放诊断，让音频探针能够绑定到壁纸包中的实际音频资源。
-
 ## 0.5.1
 - en: Fixed abnormal over-bright lighting in affected memorial lobby wallpapers, restoring clearer highlight detail closer to the intended in-game presentation.
 - zh-cn: 修复部分记忆大厅壁纸异常偏亮的光照渲染，恢复更清晰的高光细节，使画面更接近游戏内预期效果。
