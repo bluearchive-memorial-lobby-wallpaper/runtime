@@ -4,9 +4,8 @@
 // analysis surface, so acceptance can only inspect self-reported state. To verify
 // the *actual audio content* is healthy (not silent / clipped / broken), this
 // module decodes the real asset file off the play graph with OfflineAudioContext
-// and re-encodes the first seconds as a small mono 16-bit WAV data URL. The
-// source digest travels with the probe so the host can bind the sample to the
-// exact binary resource that was decoded. Zero intrusion on the live playback
+// and re-encodes the first seconds as a small mono 16-bit WAV data URL that an
+// external multimodal model can listen to. Zero intrusion on the live playback
 // chain: no MediaElementSource (which would permanently reroute element output).
 
 export interface AudioProbeResult {
@@ -14,9 +13,6 @@ export interface AudioProbeResult {
   readonly duration: number;
   readonly sampleRate: number;
   readonly frameCount: number;
-  readonly sourceSha256: string;
-  readonly sourceByteLength: number;
-  readonly sourceDuration: number;
 }
 
 export interface RenderAudioProbeOptions {
@@ -54,7 +50,7 @@ export function encodeWavPcm(pcm: Float32Array, sampleRate: number): Uint8Array 
 
 /**
  * Decode `path` with an OfflineAudioContext and render the first seconds to PCM,
- * returned as a WAV data URL. Defaults target the acceptance requirements
+ * returned as a WAV data URL. Defaults target the qwen3-omni-flash requirements
  * (16 kHz mono 16-bit, short capture). `path` must be URL-resolvable (the caller
  * resolves definition asset paths against `location.href` before calling).
  */
@@ -69,7 +65,6 @@ export async function renderAudioProbe(
     throw new Error(`audio probe fetch failed: ${response.status} ${response.statusText}`);
   }
   const arrayBuffer = await response.arrayBuffer();
-  const sourceSha256 = await sha256Hex(arrayBuffer);
 
   // Decode in a throwaway context; the render context is sized to the real
   // content so short clips (voice lines) do not trail a long silence tail.
@@ -94,15 +89,7 @@ export async function renderAudioProbe(
     duration: renderDuration,
     sampleRate,
     frameCount: pcm.length,
-    sourceSha256,
-    sourceByteLength: arrayBuffer.byteLength,
-    sourceDuration: decoded.duration,
   };
-}
-
-async function sha256Hex(bytes: ArrayBuffer): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join("");
 }
 
 function writeAscii(view: DataView, offset: number, text: string): void {
